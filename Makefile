@@ -8,10 +8,10 @@ LIB =
 
 all: GreenHashTree
 
-GreenHashTree: main.c
-	$(CC) $(CFLAGS) main.c -o GreenHashTree $(INC) $(LIB)
+GreenHashTree: ght.c
+	$(CC) $(CFLAGS) ght.c -o GreenHashTree $(INC) $(LIB)
 
 GreenHashTreeTwo: main.c
-	$(CC) $(CFLAGS) main.c -o GreenHashTreeTwo $(INC) $(LIB)
+	$(CC) $(CFLAGS) ght.c -o GreenHashTreeTwo $(INC) $(LIB)
 clean:
-	rm -f *~ *.o core* main
+	rm -f *~ *.o core* GreenHashTree
