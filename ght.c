@@ -1,15 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 #include "ght.h"
 
-typedef struct{
-    void *key;
-    void *value;
-} operation_t;
 
-operation_t OperationsArray[100];
 
 // Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
 unsigned int hash(unsigned int x) {
@@ -26,6 +23,7 @@ unsigned int unhash(unsigned int x) {
 }
 
 void *subTree(){
+    //pthread_setaffinity_np
     while(1){
         printf("iam groot\n");
         sleep(10);
@@ -50,6 +48,9 @@ db_t *db_new()
 
 
 int db_put(db_t *db_data, char *key, char *val) {
+
+    unsigned int cpunumber = hash(atoi(key)) % 4; // Put num cpus here
+    printf("This data should be put on cpu nr %d \n", cpunumber);
     return 0;
 }
 
@@ -63,16 +64,48 @@ int db_free(db_t *db_data) {
 
 int main (int argc, char **argv) 
 {
+
+    //Testing
     int i;
     //Initialize DB
     db_t *db = db_new();
 
-    for(i=0; i < 5; i++){
+    int zerocount = 0;
+    int onecount = 0;
+    int twocount = 0;
+    int threecount = 0;
+    
+    srand(time(NULL));
+    for(i=0; i < 10; i++){
+
+        
+        int rkey = rand();
+        unsigned int cpunumber = hash(rkey) % 4; // Put num cpus here
+
+        switch(cpunumber) {
+            case 0:
+                zerocount +=1;
+                break;
+            case 1:
+                onecount +=1;
+                break;
+            case 2:
+                twocount +=1;
+                break;
+            case 3:
+                threecount +=1;
+                break;
+            
+        }
+        printf("Key of number %d should be put on cpu: %d \n", rkey, cpunumber);
+
         char value[] = "asdf";
-        char key[10];
-        sprintf(key,"%d",i);
+        char key[20];
+        sprintf(key,"%d",rkey);
         db_put(db, key, value);
     }
+
+    printf("Number of 0: %d 1: %d 2: %d 3: %d \n", zerocount, onecount, twocount, threecount);
     sleep(1000);
 
 }
