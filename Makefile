@@ -1,17 +1,24 @@
 CC = gcc
 
+SOURCE = ght.c msgq.c
+HEADER = ght.h msgq.h
 # Cflags
 CFLAGS = -O2 -Wall #-Wextra -g
 
 INC = 
-LIB = 
+LIB =
 
-all: GreenHashTree
+all: MsgQ GreenHashTree main
 
-GreenHashTree: ght.c
-	$(CC) $(CFLAGS) ght.c -o GreenHashTree $(INC) $(LIB)
 
-GreenHashTreeTwo: main.c
-	$(CC) $(CFLAGS) ght.c -o GreenHashTreeTwo $(INC) $(LIB)
+main:  $(SOURCE) $(HEADER)
+	$(CC) $(CFLAGS) -o GreenHashTree ght.o msgq.o $(INC) $(LIB)
+
+GreenHashTree: $(SOURCE) $(HEADER)
+	$(CC) $(CFLAGS) -c ght.c msgq.o $(INC) $(LIB)
+
+MsgQ:  $(SOURCE) $(HEADER)
+	$(CC) $(CFLAGS) -c msgq.c $(INC) $(LIB)
 clean:
 	rm -f *~ *.o core* GreenHashTree
+	rm -f *~ *.o core* msgq.o ght.o

@@ -4,8 +4,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
-#include "ght.h"
-
+#include <msgq.h>
+#include <ght.h>
 
 
 // Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -22,12 +22,17 @@ unsigned int unhash(unsigned int x) {
     return x;
 }
 
-void *subTree(){
+void subTreeFunc(subtree_t *subtree){
+    printf("Subtree number: %d \n", subtree->threadnum);
     //pthread_setaffinity_np
     while(1){
+
+        operation_t o = queue_read(&subtree->msgq);
+        printf("Got operation Key: %s and Value %s \n", o.key, o.value);
         printf("iam groot\n");
         sleep(10);
     }
+    return;
 }
 
 db_t *db_new()
@@ -36,10 +41,17 @@ db_t *db_new()
     int i;
     int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
     db->numthreads = numofcpus;
+    db->threadlist = malloc(sizeof(subtree_t)*numofcpus);
+
     printf("Number of logical CPU's: %d\n", numofcpus);
     for(i = 0; i < numofcpus; i++){
+        subtree_t *subtreeStruct = malloc(sizeof(subtree_t));
+        
+        db->threadlist[i] = subtreeStruct; 
+        subtreeStruct->msgq = queue_init();
+        subtreeStruct->threadnum = i;
         pthread_t threadTree;
-        pthread_create(&threadTree, NULL, subTree, NULL);
+        pthread_create(&threadTree, NULL, subTreeFunc, subtreeStruct);
     }
 
     printf("Running GreenHashTree.. please wait...\n");
@@ -51,6 +63,11 @@ int db_put(db_t *db_data, char *key, char *val) {
 
     unsigned int cpunumber = hash(atoi(key)) % 4; // Put num cpus here
     printf("This data should be put on cpu nr %d \n", cpunumber);
+    operation_t o;
+    o.key = key;
+    o.value = val;
+    queue_add(&db_data->threadlist[cpunumber]->msgq, o);
+
     return 0;
 }
 
@@ -97,15 +114,16 @@ int main (int argc, char **argv)
                 break;
             
         }
-        printf("Key of number %d should be put on cpu: %d \n", rkey, cpunumber);
+        //printf("Key of number %d should be put on cpu: %d \n", rkey, cpunumber);
 
         char value[] = "asdf";
         char key[20];
         sprintf(key,"%d",rkey);
+        printf("Key before send: %s\n", key);
         db_put(db, key, value);
     }
 
-    printf("Number of 0: %d 1: %d 2: %d 3: %d \n", zerocount, onecount, twocount, threecount);
+    printf("Number of 0: %d, 1: %d, 2: %d, 3: %d \n", zerocount, onecount, twocount, threecount);
     sleep(1000);
 
 }

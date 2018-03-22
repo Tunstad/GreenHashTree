@@ -4,8 +4,13 @@
 
 //dummy keystore use int as dbstructure
 typedef struct{
+    queue_t msgq;
+    int threadnum;
+}subtree_t;
+
+typedef struct{
     int numthreads;
-    pthread_t* threadlist;
+    subtree_t** threadlist;
 }db_t;
 
 db_t *db_new();
