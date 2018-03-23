@@ -46,7 +46,7 @@ void* subTreeFunc(void* arg){
         operation_t o = queue_read(subtree->msgq);
 
          //Print operation read from queue 
-        printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
+        //printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
         if(o.type == OP_ADD){
             //Insert data into Bplustree
@@ -54,7 +54,11 @@ void* subTreeFunc(void* arg){
         }else if(o.type == OP_READ){
             //Get data from Bplustree
             i = find(root, o.key, 0);
-            printf("Found value %d at Key %d \n", *i, o.key);
+            operation_t res;
+            res.key = o.key;
+            res.value = *i;
+            queue_add(subtree->resq, res);
+            //printf("Found value %d at Key %d \n", *i, o.key);
         }else{
             printf("!!! TypeERROR!!!\n\n");
         }
@@ -62,8 +66,8 @@ void* subTreeFunc(void* arg){
        
 
         //Sleep for a set interval before trying to read another operation
-        int sleeptime = rand() % 10; 
-        sleep(sleeptime);
+        //int sleeptime = rand() % 10; 
+        //sleep(sleeptime);
     }
 }
 
@@ -95,6 +99,7 @@ db_t *db_new()
 
         //Initialize message queue for this subtree
         subtreeStruct->msgq = queue_init(); 
+        subtreeStruct->resq = queue_init();
         subtreeStruct->threadnum = i;
         
         //Start a new thread for this subtree
@@ -140,7 +145,11 @@ int db_get(db_t *db_data, int key) {
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
-    return 0;
+    operation_t res;
+
+    res = queue_read(db_data->subtreelist[(int)cpunumber]->resq);
+
+    return res.value;
 }
 
 int db_free(db_t *db_data) {
@@ -161,7 +170,7 @@ int main (int argc, char **argv)
 
 
     //Main used for testing only
-    int i;
+    int i, result;
     //Initialize DB
     db_t *db = db_new();
 
@@ -209,14 +218,15 @@ int main (int argc, char **argv)
         //sprintf(key,"%d",rkey);
 
         //Call on db_put to place value into store
-        printf("Put Value into store: %d on CPU number %d\n", rkey, cpunumber);
+        printf("Put Value %d into storeon key: %d using CPU number %d\n", value, rkey, cpunumber);
         db_put(db, rkey, value);
                 //dleep for random time between 0-10 seconds before adding new value
-        int sleeptime = rand() % 10; 
-        sleep(sleeptime);
+        //int sleeptime = rand() % 10; 
+        //sleep(sleeptime);
 
-        printf("Get same value from store..\n");
-        db_get(db, rkey);
+        //printf("Get same value from store..\n");
+        result = db_get(db, rkey);
+        printf("Value was %d \n", result);
 
 
     }
