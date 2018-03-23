@@ -2,22 +2,24 @@
 #define __MSGQ_H__
 #include <pthread.h>
 
-/// An Energy efficient message queue of operations  ///
+/* Operation to be held in queue of key and value*/
 typedef struct{
     char* key;
     char* value;
 } operation_t;
 
+
+/* Struct for a queue itself */
 typedef struct{
-operation_t* array;
-int lenght;
-int current;
-int lastadded;
-pthread_cond_t condvar;
-pthread_mutex_t mutex;
+operation_t* array;         //Array of operations in queue
+int lenght;                 //Number of operations in queue
+int current;                //Current location to get data from in queue
+int lastadded;              //Position to add in queue, after last added
+pthread_cond_t condvar;     //Condition variable of queue
+pthread_mutex_t mutex;      //Queue mutex
 }queue_t;
 
-queue_t queue_init();
+queue_t* queue_init();
 void queue_add(queue_t *queue, operation_t operation);
 operation_t queue_read(queue_t *queue);
 

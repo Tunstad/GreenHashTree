@@ -2,15 +2,14 @@
 #define __GHT_H__
 #include <pthread.h>
 
-//dummy keystore use int as dbstructure
 typedef struct{
-    queue_t msgq;
-    int threadnum;
+    queue_t* msgq;  //Message queue held by every subtree
+    int threadnum;  //Thread number of this subtree
 }subtree_t;
 
 typedef struct{
-    int numthreads;
-    subtree_t** threadlist;
+    int numthreads;             //Number of threads/subtrees in database
+    subtree_t** subtreelist;    //List of subtrees in database
 }db_t;
 
 db_t *db_new();
