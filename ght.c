@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,15 +26,26 @@ unsigned int unhash(unsigned int x) {
 /* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
 void* subTreeFunc(void* arg){
     subtree_t * subtree = (subtree_t*) arg;
-    printf("Starting subtree number: %d , que addr: %x\n", subtree->threadnum, subtree->msgq);
-    //pthread_setaffinity_np used here to set cpu core to run on
+    printf("Starting subtree number: %d \n", subtree->threadnum);
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(subtree->threadnum, &cpuset); 
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    // used here to set cpu core to run on
     while(1){
 
         // Read operation from queue here, this should later be invoked by db_get
         operation_t o = queue_read(subtree->msgq); 
 
+        int s,j;
+        s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
+        //printf("Set returned by pthread_getaffinity_np() contained:\n");
+           for (j = 0; j < CPU_SETSIZE; j++)
+               if (CPU_ISSET(j, &cpuset))
+                   printf("    CPU %d\n", j);
         //Print operation read from queue 
-        printf("Got operation Key: %d and Value %d  and CPU: %d and addr: %x \n", o.key, o.value, subtree->threadnum, subtree->msgq);
+        printf("Got operation Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
         //Sleep for a set interval before trying to read another operation
         int sleeptime = rand() % 10; 
@@ -52,8 +64,8 @@ db_t *db_new()
     int i;
 
     //Get number of LOGICAL cpu cores from sysconf
-    //int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
-    int numofcpus = 2;
+    int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+    //int numofcpus = 2;
     db->numthreads = numofcpus;
     printf("Number of logical CPU's: %d\n", numofcpus);
 
@@ -130,7 +142,8 @@ int main (int argc, char **argv)
 
         //Determine what cpu it should be used on, only for counting
         //This is recomputed in db_put
-        unsigned int cpunumber = hash(rkey) % 2; 
+        int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+        unsigned int cpunumber = hash(rkey) % numofcpus; 
 
         switch(cpunumber) {
             case 0:
