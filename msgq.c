@@ -69,7 +69,7 @@ operation_t queue_read(queue_t *queue){
 }
 
 
-int main2 (void) {
+/*int main2 (void) {
     // Used only to test queue(can be deleted if causing errors)
     int i;
     queue_t *q = queue_init();
@@ -92,4 +92,4 @@ int main2 (void) {
     }
 
     return 0;
-}
+}*/

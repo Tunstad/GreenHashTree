@@ -25,7 +25,7 @@ unsigned int unhash(unsigned int x) {
 /* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
 void* subTreeFunc(void* arg){
     subtree_t * subtree = (subtree_t*) arg;
-    printf("Starting subtree number: %d \n", subtree->threadnum);
+    printf("Starting subtree number: %d , que addr: %x\n", subtree->threadnum, subtree->msgq);
     //pthread_setaffinity_np used here to set cpu core to run on
     while(1){
 
@@ -33,7 +33,7 @@ void* subTreeFunc(void* arg){
         operation_t o = queue_read(subtree->msgq); 
 
         //Print operation read from queue 
-        printf("Got operation Key: %s and Value %s \n", o.key, o.value);
+        printf("Got operation Key: %d and Value %d  and CPU: %d and addr: %x \n", o.key, o.value, subtree->threadnum, subtree->msgq);
 
         //Sleep for a set interval before trying to read another operation
         int sleeptime = rand() % 10; 
@@ -52,7 +52,8 @@ db_t *db_new()
     int i;
 
     //Get number of LOGICAL cpu cores from sysconf
-    int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+    //int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+    int numofcpus = 2;
     db->numthreads = numofcpus;
     printf("Number of logical CPU's: %d\n", numofcpus);
 
@@ -80,10 +81,10 @@ db_t *db_new()
 }
 
 /* Function for putting data into GreenHashTree */
-int db_put(db_t *db_data, char *key, char *val) {
+int db_put(db_t *db_data, int key, int val) {
 
     //Hash key to determine which cpu should hold this data
-    unsigned int cpunumber = hash(atoi(key)) % db_data->numthreads; // Put num cpus here
+    unsigned int cpunumber = hash(key) % db_data->numthreads; // Put num cpus here
     //printf("This data should be put on cpu nr %d \n", cpunumber);
 
     //Create an operation struct to hold the key-value pair
@@ -97,7 +98,7 @@ int db_put(db_t *db_data, char *key, char *val) {
     return 0;
 }
 
-char* db_get(db_t *db_data, char *key) {
+char* db_get(db_t *db_data, int key) {
     return 0;
 }
 
@@ -129,7 +130,7 @@ int main (int argc, char **argv)
 
         //Determine what cpu it should be used on, only for counting
         //This is recomputed in db_put
-        unsigned int cpunumber = hash(rkey) % 4; 
+        unsigned int cpunumber = hash(rkey) % 2; 
 
         switch(cpunumber) {
             case 0:
@@ -148,17 +149,18 @@ int main (int argc, char **argv)
         }
 
         // Put asdf as value of all key-value pairs
-        char value[] = "asdf";
+        //char value[] = "asdf";
+        int value = 1234;
 
         //Use sprintf to transform random key into string
-        char key[20];
-        sprintf(key,"%d",rkey);
+        //char key[20];
+        //sprintf(key,"%d",rkey);
 
         //Call on db_put to place value into store
-        printf("Put Value into store: %s on CPU number %d\n", key, cpunumber);
-        db_put(db, key, value);
+        printf("Put Value into store: %d on CPU number %d\n", rkey, cpunumber);
+        db_put(db, rkey, value);
 
-        //Sleep for random time between 0-10 seconds before adding new value
+        //dleep for random time between 0-10 seconds before adding new value
         //int sleeptime = rand() % 10; 
         //sleep(sleeptime);
     }

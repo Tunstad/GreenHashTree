@@ -4,8 +4,8 @@
 
 /* Operation to be held in queue of key and value*/
 typedef struct{
-    char* key;
-    char* value;
+    int key;
+    int value;
 } operation_t;
 
 
