@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <msgq.h>
+#include "msgq.h"
 
 /// An Energy efficient message queue of operations  ///
 

@@ -4,8 +4,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
-#include <msgq.h>
-#include <ght.h>
+#include "msgq.h"
+#include "ght.h"
 
 
 // Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -23,7 +23,8 @@ unsigned int unhash(unsigned int x) {
 }
 
 /* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
-void subTreeFunc(subtree_t *subtree){
+void* subTreeFunc(void* arg){
+    subtree_t * subtree = (subtree_t*) arg;
     printf("Starting subtree number: %d \n", subtree->threadnum);
     //pthread_setaffinity_np used here to set cpu core to run on
     while(1){
@@ -38,7 +39,6 @@ void subTreeFunc(subtree_t *subtree){
         int sleeptime = rand() % 10; 
         sleep(sleeptime);
     }
-    return;
 }
 
 /* Function to set up a new key-value store of GreenHashTree */
