@@ -28,6 +28,7 @@ unsigned int unhash(unsigned int x) {
 
 /* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
 void* subTreeFunc(void* arg){
+    int *i;
     subtree_t * subtree = (subtree_t*) arg;
     printf("Starting subtree number: %d \n", subtree->threadnum);
     #ifdef LINUX
@@ -44,11 +45,21 @@ void* subTreeFunc(void* arg){
         // Read operation from queue here, this should later be invoked by db_get
         operation_t o = queue_read(subtree->msgq);
 
-        //Insert data into Bplustree
-        insert(root, o.key, o.value);
+         //Print operation read from queue 
+        printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
-        //Print operation read from queue 
-        printf("Put data on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
+        if(o.type == OP_ADD){
+            //Insert data into Bplustree
+            root = insert(root, o.key, o.value);
+        }else if(o.type == OP_READ){
+            //Get data from Bplustree
+            i = find(root, o.key, 0);
+            printf("Found value %d at Key %d \n", *i, o.key);
+        }else{
+            printf("!!! TypeERROR!!!\n\n");
+        }
+
+       
 
         //Sleep for a set interval before trying to read another operation
         int sleeptime = rand() % 10; 
@@ -106,6 +117,7 @@ int db_put(db_t *db_data, int key, int val) {
     operation_t o;
     o.key = key;
     o.value = val;
+    o.type = OP_ADD;
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
@@ -113,7 +125,21 @@ int db_put(db_t *db_data, int key, int val) {
     return 0;
 }
 
-char* db_get(db_t *db_data, int key) {
+int db_get(db_t *db_data, int key) {
+    
+    //Hash key to determine which cpu should hold this data
+    unsigned int cpunumber = hash(key) % db_data->numthreads; // Put num cpus here
+    //printf("This data should be put on cpu nr %d \n", cpunumber);
+
+    //Create an operation struct to hold the key-value pair
+    operation_t o;
+    o.key = key;
+    o.value = NULL;
+    o.type = OP_READ;
+
+    //Send operation to message queue on the desired subtree
+    queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
+
     return 0;
 }
 
@@ -123,6 +149,16 @@ int db_free(db_t *db_data) {
 
 int main (int argc, char **argv) 
 {
+    //Test BPT
+    /*
+    node* root = NULL;
+    root = insert(root, 5, 10);
+
+    int *r = find(root, 5,0);
+    printf("Got value %d \n", *r);
+    sleep(10000);
+    */
+
 
     //Main used for testing only
     int i;
@@ -141,7 +177,7 @@ int main (int argc, char **argv)
     for(i=0; i < 10; i++){
 
         //Get random int to use as key
-        int rkey = rand();
+        int rkey = rand()%100000;
 
         //Determine what cpu it should be used on, only for counting
         //This is recomputed in db_put
@@ -166,7 +202,7 @@ int main (int argc, char **argv)
 
         // Put asdf as value of all key-value pairs
         //char value[] = "asdf";
-        int value = 1234;
+        int value = rand() % 1000;
 
         //Use sprintf to transform random key into string
         //char key[20];
@@ -175,10 +211,14 @@ int main (int argc, char **argv)
         //Call on db_put to place value into store
         printf("Put Value into store: %d on CPU number %d\n", rkey, cpunumber);
         db_put(db, rkey, value);
+                //dleep for random time between 0-10 seconds before adding new value
+        int sleeptime = rand() % 10; 
+        sleep(sleeptime);
 
-        //dleep for random time between 0-10 seconds before adding new value
-        //int sleeptime = rand() % 10; 
-        //sleep(sleeptime);
+        printf("Get same value from store..\n");
+        db_get(db, rkey);
+
+
     }
 
     printf("Number of operations on cpu 0: %d, 1: %d, 2: %d, 3: %d \n", zerocount, onecount, twocount, threecount);

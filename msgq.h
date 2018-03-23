@@ -6,8 +6,11 @@
 typedef struct{
     int key;
     int value;
+    int type;
 } operation_t;
 
+#define OP_ADD 0
+#define OP_READ 1
 
 /* Struct for a queue itself */
 typedef struct{

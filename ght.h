@@ -14,7 +14,7 @@ typedef struct{
 
 db_t *db_new();
 int db_put(db_t *db_data, int key, int val);
-char* db_get(db_t *db_data, int key);
+int db_get(db_t *db_data, int key);
 int db_free(db_t *db_data);
 
 
