@@ -7,7 +7,10 @@
 #include <time.h>
 #include "msgq.h"
 #include "ght.h"
+#include "bpt.h"
 
+//Setaffinify is linux specific, so to run on other os comment out this line
+#define LINUX
 
 // Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
 unsigned int hash(unsigned int x) {
@@ -27,25 +30,25 @@ unsigned int unhash(unsigned int x) {
 void* subTreeFunc(void* arg){
     subtree_t * subtree = (subtree_t*) arg;
     printf("Starting subtree number: %d \n", subtree->threadnum);
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(subtree->threadnum, &cpuset); 
-    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    #ifdef LINUX
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(subtree->threadnum, &cpuset); 
+        pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    #endif
+
+    node* root = NULL; 
     // used here to set cpu core to run on
     while(1){
 
         // Read operation from queue here, this should later be invoked by db_get
-        operation_t o = queue_read(subtree->msgq); 
+        operation_t o = queue_read(subtree->msgq);
 
-        int s,j;
-        s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+        //Insert data into Bplustree
+        insert(root, o.key, o.value);
 
-        //printf("Set returned by pthread_getaffinity_np() contained:\n");
-           for (j = 0; j < CPU_SETSIZE; j++)
-               if (CPU_ISSET(j, &cpuset))
-                   printf("    CPU %d\n", j);
         //Print operation read from queue 
-        printf("Got operation Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
+        printf("Put data on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
         //Sleep for a set interval before trying to read another operation
         int sleeptime = rand() % 10; 
