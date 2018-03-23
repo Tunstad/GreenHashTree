@@ -7,6 +7,7 @@
 #include <time.h>
 #include "msgq.h"
 #include "ght.h"
+#include "common.h"
 
 
 // Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
@@ -31,11 +32,17 @@ void* subTreeFunc(void* arg){
     CPU_ZERO(&cpuset);
     CPU_SET(subtree->threadnum, &cpuset); 
     pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
+    //Create root node
+    struct node *root = NULL;
     // used here to set cpu core to run on
     while(1){
 
         // Read operation from queue here, this should later be invoked by db_get
         operation_t o = queue_read(subtree->msgq); 
+
+        //Put into tree
+        insert_par(root, o.key, o.value);
 
         int s,j;
         s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
