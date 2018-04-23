@@ -1,28 +1,43 @@
 CC = gcc
 
-SOURCE = ght.c msgq.c bpt.c
-HEADER = ght.h msgq.h bpt.h
+SOURCE = ght.c msgq.c
+HEADER = ght.h msgq.h 
 # Cflags
 CFLAGS = -O2 #-Wall #-Wextra -g
 
 INC = 
 LIB = -pthread -lm
 
-all: BPT MsgQ GreenHashTree main
+CBTobjs = ght.o msgq.o cbtree.o #CBTree/CBTree.so
+BPTobjs = ght.o msgq.o bpt.o
+SVEBobjs = ght.o msgq.o SVEB/SVEB.so
 
+all: bptmain
 
-main:  $(SOURCE) $(HEADER)
-	$(CC) $(CFLAGS) -o GreenHashTree ght.o msgq.o bpt.o $(INC) $(LIB)
+svebmain: $(SVEBobjs)
+	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
 
-GreenHashTree: $(SOURCE) $(HEADER)
-	$(CC) $(CFLAGS) -c ght.c $(INC) $(LIB)
+cbtmain:  $(CBTobjs)
+	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
 
-MsgQ:  $(SOURCE) $(HEADER)
-	$(CC) $(CFLAGS) -c msgq.c $(INC) $(LIB)
+bptmain:  $(BPTobjs)
+	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
 
-BPT:  $(SOURCE) $(HEADER)
-	$(CC) $(CFLAGS) -c bpt.c $(INC) $(LIB)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ $(INC) $(LIB)
+
+bpt.o: BPT/bpt.c
+	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) $(LIB)
+
+cbtree.o: CBTree/cbtree.c
+	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) -Icommon $(LIB)
+
+CBTree/CBTree.so:
+	make -C CBTree/
+
+SVEB/SVEB.so:
+	make -C SVEB/
 
 clean:
-	rm -f *~ *.o core* GreenHashTree
-	rm -f *~ *.o core* msgq.o ght.o
+	@rm -fv *~ *.o core*
+	@rm -fv $(CBTobjs) $(BPTobjs)
