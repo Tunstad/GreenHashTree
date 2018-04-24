@@ -7,12 +7,10 @@
 #include <time.h>
 #include "msgq.h"
 #include "ght.h"
-#include "BPT/bpt.h"
+#include "bpt.h"
 
 //Setaffinify is linux specific, so to run on other os comment out this line
 #define LINUX
-
-#define DATASTRUCT 1
 
 // Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
 unsigned int hash(unsigned int x) {
@@ -52,13 +50,7 @@ void* subTreeFunc(void* arg){
 
         if(o.type == OP_ADD){
             //Insert data into Bplustree
-            switch (DATASTRUCT){
-                case 0:
-                    root = insert(root, o.key, o.value);
-                case 1:
-
-            }
-            
+            root = insert(root, o.key, o.value);
         }else if(o.type == OP_READ){
             //Get data from Bplustree
             i = find(root, o.key, 0);
