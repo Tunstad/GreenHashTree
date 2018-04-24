@@ -1,5 +1,5 @@
-SRCS    := main.c staticvebtree.c
-TARGET  := SVEB
+SRCS    := main.c vebmiddleware.c staticvebtree.c
+TARGET  := SVEB.so
 TREE	:= -DSVEB
 PROF	:= N
 ENERGY  := N

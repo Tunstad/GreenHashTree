@@ -8,6 +8,8 @@
 #include "msgq.h"
 #include "ght.h"
 #include "bpt.h"
+#include "BPT/bptmiddleware.h"
+#include "SVEB/vebmiddleware.h"
 
 //Setaffinify is linux specific, so to run on other os comment out this line
 #define LINUX
@@ -28,7 +30,7 @@ unsigned int unhash(unsigned int x) {
 
 /* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
 void* subTreeFunc(void* arg){
-    int *i;
+    int i;
     subtree_t * subtree = (subtree_t*) arg;
     printf("Starting subtree number: %d \n", subtree->threadnum);
     #ifdef LINUX
@@ -38,10 +40,12 @@ void* subTreeFunc(void* arg){
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     #endif
 
-    node* root = NULL; 
+    node* root = initialize_tree(); 
+
     // used here to set cpu core to run on
     while(1){
 
+        //printf("Popping operation, thread: %d\n", subtree->threadnum);
         // Read operation from queue here, this should later be invoked by db_get
         operation_t o = queue_read(subtree->msgq);
 
@@ -49,14 +53,17 @@ void* subTreeFunc(void* arg){
         //printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
         if(o.type == OP_ADD){
+            printf("Inserting into tree, thread: %d\n", subtree->threadnum);
             //Insert data into Bplustree
-            root = insert(root, o.key, o.value);
+            root = insert_into_tree(root, o.key, o.value);
         }else if(o.type == OP_READ){
             //Get data from Bplustree
-            i = find(root, o.key, 0);
+            i = search_tree(root, o.key);
+            //int k=3;
+            //i=&k;
             operation_t res;
             res.key = o.key;
-            res.value = *i;
+            res.value =  i;
             queue_add(subtree->resq, res);
             //printf("Found value %d at Key %d \n", *i, o.key);
         }else{
@@ -64,7 +71,7 @@ void* subTreeFunc(void* arg){
         }
 
        
-
+        printf("OPERATION DONE, thread: %d\n", subtree->threadnum);
         //Sleep for a set interval before trying to read another operation
         //int sleeptime = rand() % 10; 
         //sleep(sleeptime);
@@ -88,7 +95,7 @@ db_t *db_new()
     printf("Number of logical CPU's: %d\n", numofcpus);
 
     //Allocate space for subtrees 
-    db->subtreelist = malloc(sizeof(subtree_t)*numofcpus);
+    db->subtreelist = malloc(sizeof(subtree_t*)*numofcpus);
 
     //Start a subtree for each cpu
     for(i = 0; i < numofcpus; i++){
@@ -139,7 +146,7 @@ int db_get(db_t *db_data, int key) {
     //Create an operation struct to hold the key-value pair
     operation_t o;
     o.key = key;
-    o.value = NULL;
+    o.value = 0;
     o.type = OP_READ;
 
     //Send operation to message queue on the desired subtree
