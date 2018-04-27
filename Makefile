@@ -8,16 +8,17 @@ CFLAGS = -O2 #-Wall #-Wextra -g
 INC = 
 LIB = -pthread -lm
 
-CBTobjs = ght.o msgq.o cbtree.o #CBTree/CBTree.so
+
 BPTobjs = ght.o msgq.o bpt.o bptmiddleware.o
 SVEBobjs = ght.o msgq.o SVEB/SVEB.so
+SHMobjs = ght.o msgq.o shm.o shmmiddleware.o
 
 all: bptmain
 
 svebmain: $(SVEBobjs)
 	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB) -LSVEB/SVEB.so
 
-cbtmain:  $(CBTobjs)
+shmmain:  $(SHMobjs)
 	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
 
 bptmain:  $(BPTobjs)
@@ -32,11 +33,11 @@ bpt.o: BPT/bpt.c
 bptmiddleware.o: BPT/bptmiddleware.c bpt.o
 	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) bpt.o $(LIB)
 
-cbtree.o: CBTree/cbtree.c
-	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) -Icommon $(LIB)
+shm.o: SimpleHashMap/shm.c
+	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) $(LIB)
 
-CBTree/CBTree.so:
-	make -C CBTree/
+shmmiddleware.o: SimpleHashMap/shmmiddleware.c shm.o
+	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) shm.o $(LIB)
 
 SVEB/SVEB.so:
 	make -C SVEB/

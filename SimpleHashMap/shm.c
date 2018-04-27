@@ -3,6 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Simple Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+unsigned int simplehash(unsigned int x) {
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = (x >> 16) ^ x;
+    return x;
+}
+unsigned int simpleunhash(unsigned int x) {
+    x = ((x >> 16) ^ x) * 0x119de1f3;
+    x = ((x >> 16) ^ x) * 0x119de1f3;
+    x = (x >> 16) ^ x;
+    return x;
+}
+
 map_t *shm_new( int size ) {
     map_t *map = (map_t*)malloc(sizeof(map_t));
     map->size = size;
@@ -17,11 +31,8 @@ void shm_put(map_t *map, int key, int value){
     int bucket = simplehash(key) % map->size;
 
     if(map->table[bucket].used == false){
-        printf("before \n");
         dataval_t* record = &map->table[bucket];
-        printf("Recordasdfasf \n");
         record->key = key;
-        printf("afterassign \n");
         record->val = value;
         record->next = NULL;
         record->used = true;
@@ -29,7 +40,6 @@ void shm_put(map_t *map, int key, int value){
     }else{
         dataval_t* record = &map->table[bucket];
         while(record->next != NULL){
-            printf("Finding last record \n");
             record = record->next;
         }
         dataval_t* new_record = malloc(sizeof(dataval_t));
@@ -39,7 +49,6 @@ void shm_put(map_t *map, int key, int value){
         new_record->used = true;
         record->next = new_record;
     }
-    printf("eendoffputtt \n");
 }
 
 
@@ -53,7 +62,6 @@ int shm_get(map_t *map, int key){
             return record->val;
         }else{
             do{
-                printf("TRyig to find recor \n");
                 if(record->key == key)
                     return record->val;
                 record = record->next;
@@ -63,7 +71,7 @@ int shm_get(map_t *map, int key){
     }
 return -1;
 }
-
+/*
 int main (void) {
 int result;
 map_t* testmap = shm_new(50);
@@ -76,4 +84,4 @@ for(int i = 0; i < 100; i++){
     printf("Got result %d \n", result);
 }
 return 1;
-}
+} */
