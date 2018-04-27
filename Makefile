@@ -45,3 +45,4 @@ SVEB/SVEB.so:
 clean:
 	@rm -fv *~ *.o core*
 	@rm -fv $(CBTobjs) $(BPTobjs) $(SVEBobjs)
+	@rm -fv svebmain shmmain bptmain
