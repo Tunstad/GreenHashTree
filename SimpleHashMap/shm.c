@@ -1,13 +1,79 @@
 #include "shm.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 map_t *shm_new( int size ) {
-    int i;
     map_t *map = (map_t*)malloc(sizeof(map_t));
     map->size = size;
-    map->table = (dataval_t*)malloc(sizeof(dataval_t*)*size);
-    for(i=0 i<size; i++){
-        map->table[i] = NULL;
-    }
-    return map;
+    map->table = malloc(sizeof(dataval_t)*size);
+    memset(map->table, 0, sizeof(dataval_t)*size);
 
-	
+
+    return map;
+}
+
+void shm_put(map_t *map, int key, int value){
+    int bucket = simplehash(key) % map->size;
+
+    if(map->table[bucket].used == false){
+        printf("before \n");
+        dataval_t* record = &map->table[bucket];
+        printf("Recordasdfasf \n");
+        record->key = key;
+        printf("afterassign \n");
+        record->val = value;
+        record->next = NULL;
+        record->used = true;
+        
+    }else{
+        dataval_t* record = &map->table[bucket];
+        while(record->next != NULL){
+            printf("Finding last record \n");
+            record = record->next;
+        }
+        dataval_t* new_record = malloc(sizeof(dataval_t));
+        new_record->key = key;
+        new_record->val = value;
+        new_record->next = NULL;
+        new_record->used = true;
+        record->next = new_record;
+    }
+    printf("eendoffputtt \n");
+}
+
+
+int shm_get(map_t *map, int key){
+    int bucket = simplehash(key) % map->size;
+    dataval_t* record = &map->table[bucket];
+    if(record->used == false){
+        return -1;
+    }else{
+        if(record->key == key){
+            return record->val;
+        }else{
+            do{
+                printf("TRyig to find recor \n");
+                if(record->key == key)
+                    return record->val;
+                record = record->next;
+            }while(record != NULL);
+            
+        }
+    }
+return -1;
+}
+
+int main (void) {
+int result;
+map_t* testmap = shm_new(50);
+
+for(int i = 0; i < 100; i++){
+    printf("Putting key: %d and result %d \n", i, i+1);
+    shm_put(testmap, i, i+1);
+
+    result = shm_get(testmap, i);
+    printf("Got result %d \n", result);
+}
+return 1;
+}
