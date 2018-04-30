@@ -34,7 +34,7 @@ void queue_add(queue_t *queue, operation_t operation){
     pthread_mutex_lock(&queue->mutex);
 
     //Add operation to queue on lastadded position
-    queue->array[queue->lastadded] = operation;
+    queue->array[queue->lastadded%queue->lenght] = operation;
     //Increment lastadded for next item
     queue->lastadded += 1;
 
@@ -53,12 +53,12 @@ operation_t queue_read(queue_t *queue){
     pthread_mutex_lock(&queue->mutex);
 
     //If current is at lastadded, wait for new data to be added
-    if(queue->current == queue->lastadded){
+    while(queue->current%queue->lenght == queue->lastadded%queue->lenght){
         pthread_cond_wait(&queue->condvar, &queue->mutex);
     }
 
     //Get next data from queue
-    operation_t data = queue->array[queue->current];
+    operation_t data = queue->array[queue->current%queue->lenght];
 
     //increment current variable
     queue->current += 1;

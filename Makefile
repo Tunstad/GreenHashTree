@@ -18,11 +18,20 @@ all: bptmain
 svebmain: $(SVEBobjs)
 	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB) -LSVEB/SVEB.so
 
+ghtsveb.o: $(SVEBobjs)
+	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) $(LIB) -LSVEB/SVEB.so
+
 shmmain:  $(SHMobjs)
 	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
 
+ghtshm.o:  $(SHMobjs)
+	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) $(LIB)
+
 bptmain:  $(BPTobjs)
 	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
+
+ghtbpt.o:  $(SHMobjs)
+	$(CC) $(CFLAGS) -c $^ -o $@  $(INC) $(LIB)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ $(INC) $(LIB)
@@ -41,6 +50,12 @@ shmmiddleware.o: SimpleHashMap/shmmiddleware.c shm.o
 
 SVEB/SVEB.so:
 	make -C SVEB/
+
+bench_client: bench_client.o $(SHMobjs)
+	gcc -g -O3 -o bench_client bench_client.o $(SHMobjs) -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
+
+bench_client.o: benchmark/bench_client.c
+	gcc -g -O3 -c benchmark/bench_client.c
 
 clean:
 	@rm -fv *~ *.o core*

@@ -7,7 +7,7 @@
 #include <time.h>
 #include "msgq.h"
 #include "ght.h"
-#include "bpt.h"
+#include "BPT/bpt.h"
 #include "BPT/bptmiddleware.h"
 #include "SVEB/vebmiddleware.h"
 
@@ -50,10 +50,10 @@ void* subTreeFunc(void* arg){
         operation_t o = queue_read(subtree->msgq);
 
          //Print operation read from queue 
-        //printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
+        printf("Operation Type: %d on Key: %d and Value %d should run on cpu %d \n",o.type, o.key, o.value,  subtree->threadnum);
 
         if(o.type == OP_ADD){
-            printf("Inserting into tree, thread: %d\n", subtree->threadnum);
+            //printf("Inserting into tree, thread: %d\n", subtree->threadnum);
             //Insert data into Bplustree
             root = insert_into_tree(root, o.key, o.value);
         }else if(o.type == OP_READ){
@@ -61,17 +61,19 @@ void* subTreeFunc(void* arg){
             i = search_tree(root, o.key);
             //int k=3;
             //i=&k;
-            operation_t res;
-            res.key = o.key;
-            res.value =  i;
-            queue_add(subtree->resq, res);
+            //operation_t res;
+            //res.key = o.key;
+            //res.value =  i;
+
+            //queue_add(subtree->resq, res);
+            *o.retval = i;
             //printf("Found value %d at Key %d \n", *i, o.key);
         }else{
             printf("!!! TypeERROR!!!\n\n");
         }
 
        
-        printf("OPERATION DONE, thread: %d\n", subtree->threadnum);
+        //printf("OPERATION DONE, thread: %d\n", subtree->threadnum);
         //Sleep for a set interval before trying to read another operation
         //int sleeptime = rand() % 10; 
         //sleep(sleeptime);
@@ -119,8 +121,18 @@ db_t *db_new()
 }
 
 /* Function for putting data into GreenHashTree */
-int db_put(db_t *db_data, int key, int val) {
+int db_put(db_t *db_data, int key, char* val) {
 
+    /*
+    unsigned int keyint = 0;
+    //printf("Lenght of srting is %d \n", strlen(key));
+    for(int i = 0; i < strlen(key); i++){
+        keyint += (unsigned int)key[i];
+    }
+    //printf("New keyint is : %d \n", keyint);
+    */
+    int value = 32;
+    
     //Hash key to determine which cpu should hold this data
     unsigned int cpunumber = hash(key) % db_data->numthreads; // Put num cpus here
     //printf("This data should be put on cpu nr %d \n", cpunumber);
@@ -128,7 +140,7 @@ int db_put(db_t *db_data, int key, int val) {
     //Create an operation struct to hold the key-value pair
     operation_t o;
     o.key = key;
-    o.value = val;
+    o.value = value;
     o.type = OP_ADD;
 
     //Send operation to message queue on the desired subtree
@@ -137,8 +149,16 @@ int db_put(db_t *db_data, int key, int val) {
     return 0;
 }
 
-int db_get(db_t *db_data, int key) {
-    
+int *db_get(db_t *db_data, int key) {
+
+    /*
+    unsigned int keyint = 0;
+    //printf("Lenght of srting is %d \n", strlen(key));
+    for(int i = 0; i < strlen(key); i++){
+        keyint += (unsigned int)key[i];
+    }
+    //printf("New keyint is : %d \n", keyint);
+    */
     //Hash key to determine which cpu should hold this data
     unsigned int cpunumber = hash(key) % db_data->numthreads; // Put num cpus here
     //printf("This data should be put on cpu nr %d \n", cpunumber);
@@ -148,34 +168,35 @@ int db_get(db_t *db_data, int key) {
     o.key = key;
     o.value = 0;
     o.type = OP_READ;
+    int* returnlocationint = malloc(sizeof(int));
+    
+    o.retval = returnlocationint;
+    *o.retval = -9573946;
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
     operation_t res;
 
-    res = queue_read(db_data->subtreelist[(int)cpunumber]->resq);
+    //res = queue_read(db_data->subtreelist[(int)cpunumber]->resq);
+    while(*returnlocationint == -9573946){
+        sleep(0.001);
+    }
 
-    return res.value;
+    if(*returnlocationint == -6666666){
+        return NULL;
+    }
+
+    printf("REturned value %d \n", *returnlocationint);
+    return returnlocationint;
 }
 
 int db_free(db_t *db_data) {
     return 0 ;
 }
-
+/*
 int main (int argc, char **argv) 
 {
-    //Test BPT
-    /*
-    node* root = NULL;
-    root = insert(root, 5, 10);
-
-    int *r = find(root, 5,0);
-    printf("Got value %d \n", *r);
-    sleep(10000);
-    */
-
-
     //Main used for testing only
     int i, result;
     //Initialize DB
@@ -192,13 +213,37 @@ int main (int argc, char **argv)
     //Send 10 operations to key-value store
     for(i=0; i < 10; i++){
 
-        //Get random int to use as key
+        //Get random string to use as key
+
+        char *string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
+        size_t stringLen = strlen(string);
+        int length = 16;
+        char *randomString = NULL;
+        randomString = malloc(sizeof(char) * (length +1));
+
+        if (randomString) {
+        short key = 0;
+
+        for (int n = 0;n < length;n++) {            
+            key = rand() % stringLen;          
+            randomString[n] = string[key];
+        }
+
+        randomString[length] = '\0';
+        printf("Generated random string %s \n", randomString);      
+    }
+    else {
+        printf("No memory");
+        exit(1);
+    }
+
+
         int rkey = rand()%100000;
 
         //Determine what cpu it should be used on, only for counting
         //This is recomputed in db_put
         int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
-        unsigned int cpunumber = hash(rkey) % numofcpus; 
+        unsigned int cpunumber = hash(randomString) % numofcpus; 
 
         switch(cpunumber) {
             case 0:
@@ -217,23 +262,23 @@ int main (int argc, char **argv)
         }
 
         // Put asdf as value of all key-value pairs
-        //char value[] = "asdf";
-        int value = rand() % 1000;
+        char value[] = "asdfvalue";
+        //int value = rand() % 1000;
 
         //Use sprintf to transform random key into string
         //char key[20];
         //sprintf(key,"%d",rkey);
 
         //Call on db_put to place value into store
-        printf("Put Value %d into storeon key: %d using CPU number %d\n", value, rkey, cpunumber);
-        db_put(db, rkey, value);
+        printf("Put Value %s into storeon key: %d using CPU number %d\n", value, rkey, cpunumber);
+        db_put(db, randomString, value);
                 //dleep for random time between 0-10 seconds before adding new value
         //int sleeptime = rand() % 10; 
         //sleep(sleeptime);
 
         //printf("Get same value from store..\n");
-        result = db_get(db, rkey);
-        printf("Value was %d \n", result);
+        result = db_get(db, randomString);
+        printf("Value was %s \n", result);
 
 
     }
@@ -243,4 +288,4 @@ int main (int argc, char **argv)
     //Main should not finish before all values is retrieved by worker threads
     sleep(1000);
 
-}
+}*/
