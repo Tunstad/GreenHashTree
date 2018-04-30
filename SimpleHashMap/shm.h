@@ -17,6 +17,6 @@ typedef struct{
 
 extern map_t* shm_new(int size);
 extern void shm_put(map_t *map, int key, int value);
-extern int shm_get(map_t *map, int key);
+extern int* shm_get(map_t *map, int key);
 
 #endif

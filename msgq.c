@@ -11,8 +11,10 @@ queue_t* queue_init(){
     queue_t *queue = malloc(sizeof(queue_t));
 
     //Initializers not used?
-    //queue.condvar = PTHREAD_COND_INITIALIZER;
-    //queue.mutex = PTHREAD_MUTEX_INITIALIZER;
+    //queue->condvar = PTHREAD_COND_INITIALIZER;
+    //queue->mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_init(&queue->mutex, NULL);
+    pthread_cond_init(&queue->condvar, NULL);
 
     //Message queue should be of set length
     queue->lenght = 1000;
@@ -29,12 +31,13 @@ queue_t* queue_init(){
 
 //Add an operation to queue
 void queue_add(queue_t *queue, operation_t operation){
+    
 
     //Lock before editing queue
     pthread_mutex_lock(&queue->mutex);
 
     //Add operation to queue on lastadded position
-    queue->array[queue->lastadded] = operation;
+    queue->array[queue->lastadded % queue->lenght] = operation;
     //Increment lastadded for next item
     queue->lastadded += 1;
 
@@ -53,12 +56,14 @@ operation_t queue_read(queue_t *queue){
     pthread_mutex_lock(&queue->mutex);
 
     //If current is at lastadded, wait for new data to be added
-    if(queue->current == queue->lastadded){
+    while(queue->current == queue->lastadded){
         pthread_cond_wait(&queue->condvar, &queue->mutex);
+
     }
 
+
     //Get next data from queue
-    operation_t data = queue->array[queue->current];
+    operation_t data = queue->array[queue->current % queue->lenght];
 
     //increment current variable
     queue->current += 1;

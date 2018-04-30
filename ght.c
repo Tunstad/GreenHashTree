@@ -1,13 +1,14 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
 #include "msgq.h"
 #include "ght.h"
-#include "bpt.h"
+#include "BPT/bpt.h"
 #include "BPT/bptmiddleware.h"
 #include "SVEB/vebmiddleware.h"
 
@@ -30,7 +31,7 @@ unsigned int unhash(unsigned int x) {
 
 /* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
 void* subTreeFunc(void* arg){
-    int i;
+    int* i;
     subtree_t * subtree = (subtree_t*) arg;
     printf("Starting subtree number: %d \n", subtree->threadnum);
     #ifdef LINUX
@@ -53,25 +54,32 @@ void* subTreeFunc(void* arg){
         //printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
         if(o.type == OP_ADD){
-            printf("Inserting into tree, thread: %d\n", subtree->threadnum);
+            //printf("Inserting into tree, thread: %d\n", subtree->threadnum);
             //Insert data into Bplustree
             root = insert_into_tree(root, o.key, o.value);
         }else if(o.type == OP_READ){
             //Get data from Bplustree
             i = search_tree(root, o.key);
+            //printf("Address of returned value %p \n", i);
             //int k=3;
             //i=&k;
             operation_t res;
             res.key = o.key;
-            res.value =  i;
+            if(i == NULL){
+                res.value = INT32_MAX;
+            }else{
+                //printf("Value is actually something \n");
+                res.value =  *i;
+            }
+            
             queue_add(subtree->resq, res);
-            //printf("Found value %d at Key %d \n", *i, o.key);
+            //printf("Found value %d at Key %d \n", i, o.key);
         }else{
-            printf("!!! TypeERROR!!!\n\n");
+            printf("!!! TypeERROR!!! type: %d \n\n", o.type);
         }
 
        
-        printf("OPERATION DONE, thread: %d\n", subtree->threadnum);
+        //printf("OPERATION DONE, thread: %d\n", subtree->threadnum);
         //Sleep for a set interval before trying to read another operation
         //int sleeptime = rand() % 10; 
         //sleep(sleeptime);
@@ -87,6 +95,9 @@ db_t *db_new()
     //Allocate memory for db-struct
     db_t* db = malloc(sizeof(db_t));
     int i;
+
+    db->intval = malloc(sizeof(int));
+    *db->intval = 3579;
 
     //Get number of LOGICAL cpu cores from sysconf
     int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
@@ -119,25 +130,27 @@ db_t *db_new()
 }
 
 /* Function for putting data into GreenHashTree */
-int db_put(db_t *db_data, int key, int val) {
+int* db_put(db_t *db_data, int key, int val) {
 
     //Hash key to determine which cpu should hold this data
     unsigned int cpunumber = hash(key) % db_data->numthreads; // Put num cpus here
     //printf("This data should be put on cpu nr %d \n", cpunumber);
 
+    //printf("The key and value to be put K: %d V: %d \n", key, val);
     //Create an operation struct to hold the key-value pair
     operation_t o;
     o.key = key;
     o.value = val;
     o.type = OP_ADD;
+    //printf("SET key and value to be put K: %d V: %d Type: %d \n", o.key, o.value, o.type);
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
-    return 0;
+    return db_data->intval;
 }
 
-int db_get(db_t *db_data, int key) {
+int* db_get(db_t *db_data, int key) {
     
     //Hash key to determine which cpu should hold this data
     unsigned int cpunumber = hash(key) % db_data->numthreads; // Put num cpus here
@@ -156,24 +169,19 @@ int db_get(db_t *db_data, int key) {
 
     res = queue_read(db_data->subtreelist[(int)cpunumber]->resq);
 
-    return res.value;
+    if(res.value == INT32_MAX)
+        return NULL;
+
+    //printf("Found value lol \n");
+    return db_data->intval;
 }
 
 int db_free(db_t *db_data) {
     return 0 ;
 }
-
+/*
 int main (int argc, char **argv) 
 {
-    //Test BPT
-    /*
-    node* root = NULL;
-    root = insert(root, 5, 10);
-
-    int *r = find(root, 5,0);
-    printf("Got value %d \n", *r);
-    sleep(10000);
-    */
 
 
     //Main used for testing only
@@ -243,4 +251,4 @@ int main (int argc, char **argv)
     //Main should not finish before all values is retrieved by worker threads
     sleep(1000);
 
-}
+}*/

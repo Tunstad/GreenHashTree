@@ -15,9 +15,15 @@ void *insert_into_tree(void *tree, int key, int val){
     return NULL;
 }
 
-int search_tree(void *tree, int key){
-    int retval = search_test(key);
+int* search_tree(void *tree, int key){
+    int* retval = malloc(sizeof(int));
+    *retval = search_test(key);
 
+    if(*retval == 0){
+        
+        return NULL;
+    }
     //If 1, OK
+    //printf("Address of retval %p \n", &retval);
     return retval;
 }

@@ -13,8 +13,7 @@ void *insert_into_tree(void *root, int key, int value){
     return root;
 }
 
-int search_tree(void *root, int key){
-    int value = shm_get(root, key);
-
+int* search_tree(void *root, int key){
+    int* value = shm_get(root, key);
     return value;
 }

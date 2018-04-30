@@ -3,6 +3,6 @@
 
 void *initialize_tree();
 void *insert_into_tree(void *root, int key, int value);
-int search_tree(void *root, int key);
+int* search_tree(void *root, int key);
 
 #endif

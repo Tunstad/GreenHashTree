@@ -52,24 +52,24 @@ void shm_put(map_t *map, int key, int value){
 }
 
 
-int shm_get(map_t *map, int key){
+int* shm_get(map_t *map, int key){
     int bucket = simplehash(key) % map->size;
     dataval_t* record = &map->table[bucket];
     if(record->used == false){
-        return -1;
+        return NULL;
     }else{
         if(record->key == key){
-            return record->val;
+            return &record->val;
         }else{
             do{
                 if(record->key == key)
-                    return record->val;
+                    return &record->val;
                 record = record->next;
             }while(record != NULL);
             
         }
     }
-return -1;
+return NULL;
 }
 /*
 int main (void) {

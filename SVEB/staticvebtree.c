@@ -657,8 +657,11 @@ int search_test(domain key) {
     it  = search(key);
     pthread_spin_unlock(&global_lock);
     
-    if(val[it] == key) return 1;
-    else return 0;
+    if(val[it] == key){
+        return 1;
+    }else{
+        return 0;
+    } 
 }
 
 int init_tree( int t) {
