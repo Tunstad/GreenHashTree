@@ -7,6 +7,7 @@ typedef struct{
     int key;
     int value;
     int type;
+    int * retval;
 } operation_t;
 
 #define OP_ADD 0

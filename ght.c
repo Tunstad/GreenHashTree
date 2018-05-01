@@ -179,16 +179,18 @@ void* subTreeFunc(void* arg){
             //printf("Address of returned value %p \n", i);
             //int k=3;
             //i=&k;
-            operation_t res;
-            res.key = o.key;
+            //operation_t res;
+            //res.key = o.key;
             if(i == NULL){
-                res.value = INT32_MAX;
+                *o.retval = 1;
+                //res.value = INT32_MAX;
             }else{
+                *o.retval = 2;
                 //printf("Value is actually something \n");
-                res.value =  *i;
+                //res.value =  *i;
             }
             
-            queue_add(subtree->resq, res);
+            //queue_add(subtree->resq, res);
             //printf("Found value %d at Key %d \n", i, o.key);
         }else{
             printf("!!! TypeERROR!!! type: %d \n\n", o.type);
@@ -282,10 +284,22 @@ int* db_get(db_t *db_data, int key) {
     o.key = key;
     o.value = 0;
     o.type = OP_READ;
+    o.retval = malloc(sizeof(int));
+    *o.retval = 0;
+
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
+    while(*o.retval == 0){
+        sleep(0.00001);
+    }
+    if(*o.retval == 1){
+        return NULL;
+    }else{
+        return db_data->intval;
+    }
+ /*
     operation_t res;
 
     res = queue_read(db_data->subtreelist[(int)cpunumber]->resq, key);
@@ -294,7 +308,7 @@ int* db_get(db_t *db_data, int key) {
         return NULL;
 
     //printf("Found value lol \n");
-    return db_data->intval;
+    return db_data->intval;*/
 }
 
 int db_free(db_t *db_data) {
