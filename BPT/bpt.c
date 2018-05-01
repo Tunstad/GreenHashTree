@@ -49,6 +49,7 @@
  *
  */
 #include "bpt.h"
+#include "../config.h"
 // GLOBALS.
 /*Global lock used for concurrency purposes to
  * avoid several threads modifying root
@@ -490,10 +491,15 @@ record * find( node * root, int key, bool verbose ) {
     if (c == NULL) return NULL;
     for (i = 0; i < c->num_keys; i++)
         if (c->keys[i] == key) break;
-    if (i == c->num_keys)
+    if (i == c->num_keys){
         return NULL;
-    else
+    }else{
+        //Simulate reading data 32 bytes of data here //
+        record * foundnode = (record *)c->pointers[i];
+        strcpy(EXAMPLEDATA, foundnode->simdata);
         return (record *)c->pointers[i];
+    }
+        
 }
 
 /* Finds the appropriate place to
@@ -955,6 +961,10 @@ node * insert( node * root, int key, int value ) {
      * value.
      */
     pointer = make_record(value);
+    // Simulate actually writing 32 bytes of data here //
+    strcpy(pointer->simdata, EXAMPLEDATA);
+
+    
 
     /* Case: the tree does not exist yet.
      * Start a new tree.
@@ -973,6 +983,8 @@ node * insert( node * root, int key, int value ) {
     //Find candiate leaf
 
     leaf = find_leaf_insert(root, key, false);
+
+   
 
 
     /* The current implementation ignores

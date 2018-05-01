@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <string.h>
 #ifdef WINDOWS
 #define bool char
 #define false 0
@@ -54,6 +55,7 @@
  */
 typedef struct record {
     int value;
+    char simdata[32];
 } record;
 
 /* Type representing a node in the B+ tree.
@@ -93,7 +95,7 @@ typedef struct node {
     bool is_leaf;
     int num_keys;
     struct node * next; // Used for queue.
-    pthread_mutex_t lock;
+    pthread_mutex_t lock;  
 } node;
 
 

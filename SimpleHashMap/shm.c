@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../config.h"
 
 // Simple Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
 unsigned int simplehash(unsigned int x) {
@@ -22,6 +23,7 @@ map_t *shm_new( int size ) {
     map->size = size;
     map->table = malloc(sizeof(dataval_t)*size);
     memset(map->table, 0, sizeof(dataval_t)*size);
+    pthread_rwlock_init(&map->lock, NULL);
 
 
     return map;
@@ -30,12 +32,17 @@ map_t *shm_new( int size ) {
 void shm_put(map_t *map, int key, int value){
     int bucket = simplehash(key) % map->size;
 
+    pthread_rwlock_wrlock(&map->lock);
+
     if(map->table[bucket].used == false){
         dataval_t* record = &map->table[bucket];
         record->key = key;
         record->val = value;
         record->next = NULL;
         record->used = true;
+        strcpy(record->simdata, EXAMPLEDATA);
+
+
         
     }else{
         dataval_t* record = &map->table[bucket];
@@ -48,27 +55,39 @@ void shm_put(map_t *map, int key, int value){
         new_record->next = NULL;
         new_record->used = true;
         record->next = new_record;
+        strcpy(record->simdata, EXAMPLEDATA);
     }
+    pthread_rwlock_unlock(&map->lock);
 }
 
 
 int* shm_get(map_t *map, int key){
     int bucket = simplehash(key) % map->size;
+
+    pthread_rwlock_rdlock(&map->lock);
+
     dataval_t* record = &map->table[bucket];
     if(record->used == false){
+        pthread_rwlock_unlock(&map->lock);
         return NULL;
     }else{
         if(record->key == key){
+            pthread_rwlock_unlock(&map->lock);
+            strcpy(EXAMPLEDATA, record->simdata);
             return &record->val;
         }else{
             do{
-                if(record->key == key)
+                if(record->key == key){
+                    pthread_rwlock_unlock(&map->lock);
+                    strcpy(EXAMPLEDATA, record->simdata);
                     return &record->val;
+                }
                 record = record->next;
             }while(record != NULL);
             
         }
     }
+pthread_rwlock_unlock(&map->lock);
 return NULL;
 }
 /*

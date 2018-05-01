@@ -2,7 +2,7 @@
 #include "stddef.h"
 
 void *initialize_tree(){
-    int ret_val = init_tree(10);
+    int ret_val = init_tree(10000);
 
     //Returned to allow greenhashtree layer to be unaware of underlying data structure.
     return NULL;
