@@ -102,11 +102,11 @@ void hb_poet_init() {
         exit(1);
     }
 #ifdef USE_POET
-    if (get_control_states("config/control_config", &control_states, &nstates)) {
+    if (get_control_states("benchmark/config/control_config", &control_states, &nstates)) {
         fprintf(stderr, "Failed to load control states.\n");
         exit(1);
     }
-    if (get_cpu_states("config/cpu_config", &cpu_states, &nstates)) {
+    if (get_cpu_states("benchmark/config/cpu_config", &cpu_states, &nstates)) {
         fprintf(stderr, "Failed to load cpu states.\n");
         exit(1);
     }
