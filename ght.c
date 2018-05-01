@@ -164,7 +164,7 @@ void* subTreeFunc(void* arg){
 
         //printf("Popping operation, thread: %d\n", subtree->threadnum);
         // Read operation from queue here, this should later be invoked by db_get
-        operation_t o = queue_read(subtree->msgq);
+        operation_t o = queue_read(subtree->msgq, INT32_MAX);
 
          //Print operation read from queue 
         //printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
@@ -288,7 +288,7 @@ int* db_get(db_t *db_data, int key) {
 
     operation_t res;
 
-    res = queue_read(db_data->subtreelist[(int)cpunumber]->resq);
+    res = queue_read(db_data->subtreelist[(int)cpunumber]->resq, key);
 
     if(res.value == INT32_MAX)
         return NULL;
