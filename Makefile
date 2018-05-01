@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 #-Wall #-Wextra
-INC = 
+INC =
 LIB = -pthread -lm
 BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
 

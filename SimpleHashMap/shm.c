@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../config.h"
 
 // Simple Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
 unsigned int simplehash(unsigned int x) {
@@ -39,6 +40,9 @@ void shm_put(map_t *map, int key, int value){
         record->val = value;
         record->next = NULL;
         record->used = true;
+        strcpy(record->simdata, EXAMPLEDATA);
+
+
         
     }else{
         dataval_t* record = &map->table[bucket];
@@ -51,6 +55,7 @@ void shm_put(map_t *map, int key, int value){
         new_record->next = NULL;
         new_record->used = true;
         record->next = new_record;
+        strcpy(record->simdata, EXAMPLEDATA);
     }
     pthread_rwlock_unlock(&map->lock);
 }
@@ -68,11 +73,13 @@ int* shm_get(map_t *map, int key){
     }else{
         if(record->key == key){
             pthread_rwlock_unlock(&map->lock);
+            strcpy(EXAMPLEDATA, record->simdata);
             return &record->val;
         }else{
             do{
                 if(record->key == key){
                     pthread_rwlock_unlock(&map->lock);
+                    strcpy(EXAMPLEDATA, record->simdata);
                     return &record->val;
                 }
                 record = record->next;

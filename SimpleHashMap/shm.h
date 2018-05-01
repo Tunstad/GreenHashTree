@@ -7,6 +7,7 @@ typedef struct dataval dataval_t;
 struct dataval{
     int key;
     int val;
+    char simdata[32];
     dataval_t* next;
     bool used;
 };
