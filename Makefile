@@ -51,8 +51,8 @@ shmmiddleware.o: SimpleHashMap/shmmiddleware.c shm.o
 SVEB/SVEB.so:
 	make -C SVEB/
 
-bench_client: bench_client.o $(SVEBobjs)
-	gcc -g -O3 -o bench_client bench_client.o $(SVEBobjs) -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
+bench_client: bench_client.o $(BPTobjs)
+	gcc -g -O3 -o bench_client bench_client.o $(BPTobjs) -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
 
 bench_client.o: benchmark/bench_client.c
 	gcc -g -O3 -c benchmark/bench_client.c
