@@ -1,6 +1,7 @@
 #ifndef __SHM_H__
 #define __SHM_H__
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct dataval dataval_t;
 struct dataval{
@@ -13,6 +14,7 @@ struct dataval{
 typedef struct{
     dataval_t *table;
     int size;
+    pthread_rwlock_t lock;
 }map_t;
 
 extern map_t* shm_new(int size);

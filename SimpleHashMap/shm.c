@@ -22,6 +22,7 @@ map_t *shm_new( int size ) {
     map->size = size;
     map->table = malloc(sizeof(dataval_t)*size);
     memset(map->table, 0, sizeof(dataval_t)*size);
+    pthread_rwlock_init(&map->lock, NULL);
 
 
     return map;
@@ -29,6 +30,8 @@ map_t *shm_new( int size ) {
 
 void shm_put(map_t *map, int key, int value){
     int bucket = simplehash(key) % map->size;
+
+    pthread_rwlock_wrlock(&map->lock);
 
     if(map->table[bucket].used == false){
         dataval_t* record = &map->table[bucket];
@@ -49,26 +52,35 @@ void shm_put(map_t *map, int key, int value){
         new_record->used = true;
         record->next = new_record;
     }
+    pthread_rwlock_unlock(&map->lock);
 }
 
 
 int* shm_get(map_t *map, int key){
     int bucket = simplehash(key) % map->size;
+
+    pthread_rwlock_rdlock(&map->lock);
+
     dataval_t* record = &map->table[bucket];
     if(record->used == false){
+        pthread_rwlock_unlock(&map->lock);
         return NULL;
     }else{
         if(record->key == key){
+            pthread_rwlock_unlock(&map->lock);
             return &record->val;
         }else{
             do{
-                if(record->key == key)
+                if(record->key == key){
+                    pthread_rwlock_unlock(&map->lock);
                     return &record->val;
+                }
                 record = record->next;
             }while(record != NULL);
             
         }
     }
+pthread_rwlock_unlock(&map->lock);
 return NULL;
 }
 /*
