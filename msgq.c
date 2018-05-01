@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <pthread.h>
 #include "msgq.h"
 
@@ -50,20 +51,30 @@ void queue_add(queue_t *queue, operation_t operation){
 }
 
 //Read data from queue
-operation_t queue_read(queue_t *queue){
+operation_t queue_read(queue_t *queue, int key){
 
     //Lock queue before reading from it 
     pthread_mutex_lock(&queue->mutex);
 
-    //If current is at lastadded, wait for new data to be added
-    while(queue->current == queue->lastadded){
-        pthread_cond_wait(&queue->condvar, &queue->mutex);
+    operation_t data;
+    if(key != INT32_MAX){
+        data.key = INT32_MAX;
 
+        //If current is at lastadded, wait for new data to be added
+        while(queue->current == queue->lastadded && data.key != key){
+            pthread_cond_wait(&queue->condvar, &queue->mutex);
+            //Get next data from queue
+            data = queue->array[queue->current % queue->lenght];
+        }
+
+    }else{
+        while(queue->current == queue->lastadded){
+           pthread_cond_wait(&queue->condvar, &queue->mutex); 
+        }
+        data = queue->array[queue->current % queue->lenght];
     }
 
 
-    //Get next data from queue
-    operation_t data = queue->array[queue->current % queue->lenght];
 
     //increment current variable
     queue->current += 1;
