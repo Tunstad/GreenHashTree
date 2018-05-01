@@ -1,37 +1,18 @@
 CC = gcc
-
-SOURCE = ght.c msgq.c
-HEADER = ght.h msgq.h 
-# Cflags
-CFLAGS = -O2 #-Wall #-Wextra -g
-
+CFLAGS = -O2 #-Wall #-Wextra
 INC = 
 LIB = -pthread -lm
+BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
 
+ghtbpt = ght.o msgq.o bpt.o bptmiddleware.o
+ghtsveb = ght.o msgq.o SVEB/SVEB.so
+ghtshm = ght.o msgq.o shm.o shmmiddleware.o
 
-BPTobjs = ght.o msgq.o bpt.o bptmiddleware.o
-SVEBobjs = ght.o msgq.o SVEB/SVEB.so
-SHMobjs = ght.o msgq.o shm.o shmmiddleware.o
+blbpt = baseline.o msgq.o bpt.o bptmiddleware.o
+blsveb = baseline.o msgq.o SVEB/SVEB.so
+blshm = baseline.o msgq.o shm.o shmmiddleware.o
 
-all: bptmain
-
-svebmain: $(SVEBobjs)
-	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB) -LSVEB/SVEB.so
-
-ghtsveb.o: $(SVEBobjs)
-	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) $(LIB) -LSVEB/SVEB.so
-
-shmmain:  $(SHMobjs)
-	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
-
-ghtshm.o:  $(SHMobjs)
-	$(CC) $(CFLAGS) -c $^ -o $@ $(INC) $(LIB)
-
-bptmain:  $(BPTobjs)
-	$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LIB)
-
-ghtbpt.o:  $(SHMobjs)
-	$(CC) $(CFLAGS) -c $^ -o $@  $(INC) $(LIB)
+all: bench_ght_btp
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ $(INC) $(LIB)
@@ -51,13 +32,28 @@ shmmiddleware.o: SimpleHashMap/shmmiddleware.c shm.o
 SVEB/SVEB.so:
 	make -C SVEB/
 
-bench_client: bench_client.o $(BPTobjs)
-	gcc -g -O3 -o bench_client bench_client.o $(BPTobjs) -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
+bench_ght_btp: bench_client.o $(ghtbpt)
+	gcc -g -O3 -o bench_client bench_client.o $(ghtbpt) $(BENCHLIB)
+
+bench_ght_sveb: bench_client.o $(ghtsveb)
+	gcc -g -O3 -o bench_client bench_client.o $(ghtsveb) $(BENCHLIB)
+
+bench_ght_shm: bench_client.o $(ghtshm)
+	gcc -g -O3 -o bench_client bench_client.o $(ghtshm) $(BENCHLIB)
+
+bench_baseline_bpt: bench_client.o $(blbpt)
+	gcc -g -O3 -o bench_client bench_client.o $(blbpt) $(BENCHLIB)
+
+bench_baseline_sveb: bench_client.o $(blsveb)
+	gcc -g -O3 -o bench_client bench_client.o $(blsveb) $(BENCHLIB)
+
+bench_baseline_shm: bench_client.o $(blshm)
+	gcc -g -O3 -o bench_client bench_client.o $(blshm) $(BENCHLIB)
 
 bench_client.o: benchmark/bench_client.c
 	gcc -g -O3 -c benchmark/bench_client.c
 
 clean:
 	@rm -fv *~ *.o core*
-	@rm -fv $(CBTobjs) $(BPTobjs) $(SVEBobjs)
-	@rm -fv svebmain shmmain bptmain
+	@rm -fv $(ghtbpt) $(ghtsveb) $(ghtshm) $(blbpt) $(blsveb) $(blshm)
+	@rm -fv bench_client
