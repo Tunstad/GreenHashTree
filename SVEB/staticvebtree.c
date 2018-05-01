@@ -24,10 +24,12 @@
 #include <signal.h>
 #include <pthread.h>
 #include <limits.h>
+#include <string.h>
 #define MAXINT INT_MAX
 
 #include "locks.h"
 #include "staticvebtree.h"
+#include "../config.h"
 
 //Added global lock
 pthread_spinlock_t global_lock;
@@ -51,6 +53,8 @@ levelinfo *myli;
 int *anc;
 int bf;
 int h;
+char* simdataset;
+int simsize;
 
 void init_height(int top, int bot) {
     int me = (top+bot+1) / 2;
@@ -332,6 +336,12 @@ int insert(int ky) {
     keys++;
 
     c =insert_rec( 0  );
+
+    //Simulate copying 32 bytes of data into tree
+    char* destination = simdataset + (((unsigned int)ky%simsize) * 32);
+    strcpy(destination ,EXAMPLEDATA);
+
+
 
     if( was_in ) {
         pthread_spin_unlock(&global_lock);
@@ -658,6 +668,11 @@ int search_test(domain key) {
     pthread_spin_unlock(&global_lock);
     
     if(val[it] == key){
+
+        //Found data, simulate copying 32 bytes from tree
+        char* destination = simdataset + (((unsigned int)key%simsize) * 32);
+        strcpy(EXAMPLEDATA, destination);
+
         return 1;
     }else{
         return 0;
@@ -666,6 +681,10 @@ int search_test(domain key) {
 
 int init_tree( int t) {
     n=t;
+
+    //Allocate memory for data, used in simulating data transfer
+    simdataset = malloc(sizeof(char[32])*t);
+    simsize = t;
     
     fprintf(stderr,"Initial tree size n:%d\n", n);
     init_memory();       
