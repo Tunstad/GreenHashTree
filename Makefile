@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O2 #-Wall #-Wextra
 INC =
 LIB = -pthread -lm
-BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
+BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm -pg
 
 ghtbpt = ght.o msgq.o bpt.o bptmiddleware.o
 ghtsveb = ght.o msgq.o SVEB/SVEB.so
@@ -32,7 +32,7 @@ shmmiddleware.o: SimpleHashMap/shmmiddleware.c shm.o
 SVEB/SVEB.so:
 	make -C SVEB/
 
-bench_ght_btp: bench_client.o $(ghtbpt)
+bench_ght_bpt: bench_client.o $(ghtbpt)
 	gcc -g -O3 -o bench_client bench_client.o $(ghtbpt) $(BENCHLIB)
 
 bench_ght_sveb: bench_client.o $(ghtsveb)
@@ -56,4 +56,5 @@ bench_client.o: benchmark/bench_client.c
 clean:
 	@rm -fv *~ *.o core*
 	@rm -fv $(ghtbpt) $(ghtsveb) $(ghtshm) $(blbpt) $(blsveb) $(blshm)
-	@rm -fv bench_client
+	@rm -fv bench_client gmon.out
+
