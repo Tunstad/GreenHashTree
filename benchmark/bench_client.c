@@ -310,6 +310,7 @@ main(int argc, char **argv)
     void *status;
     int rc = pthread_join(threads[t], &status);
     if (rc) {
+      perror("error, pthread_join");
       exit(-1);
     }
     result.total_time = (result.total_time > tp[t].time) ? result.total_time : tp[t].time;
