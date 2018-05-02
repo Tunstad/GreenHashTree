@@ -224,8 +224,9 @@ db_t *db_new()
     db->intval = malloc(sizeof(int));
     *db->intval = 3579;
 
-    //Get number of LOGICAL cpu cores from sysconf
-    int numofcpus = sysconf(_SC_NPROCESSORS_ONLN)-4;
+    //Get number of LOGICAL cpu cores from sysconf, use only the first half for subtrees
+    //other half will be used for benchmarking.
+    int numofcpus = sysconf(_SC_NPROCESSORS_ONLN)/2;
     //int numofcpus = 2;
     db->numthreads = numofcpus;
     printf("Number of logical CPU's: %d\n", numofcpus);
