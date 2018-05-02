@@ -173,6 +173,8 @@ void* subTreeFunc(void* arg){
             //printf("Inserting into tree, thread: %d\n", subtree->threadnum);
             //Insert data into Bplustree
             root = insert_into_tree(root, o.key, o.value);
+            *o.retval = 2;
+
         }else if(o.type == OP_READ){
             //Get data from Bplustree
             i = search_tree(root, o.key);
@@ -265,10 +267,17 @@ int* db_put(db_t *db_data, int key, int val) {
     o.key = key;
     o.value = val;
     o.type = OP_ADD;
+    o.retval = malloc(sizeof(int));
+    *o.retval = 0;
     //printf("SET key and value to be put K: %d V: %d Type: %d \n", o.key, o.value, o.type);
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
+
+    /*while(*o.retval == 0){
+        //nanosleep(&timestruct, NULL);
+        sleep(0);
+    }*/
 
     return db_data->intval;
 }
@@ -286,14 +295,19 @@ int* db_get(db_t *db_data, int key) {
     o.type = OP_READ;
     o.retval = malloc(sizeof(int));
     *o.retval = 0;
+    struct timespec timestruct;
+    timestruct.tv_sec = 0;
+    timestruct.tv_nsec = 1;
 
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
     while(*o.retval == 0){
-        sleep(0.00001);
+        //nanosleep(&timestruct, NULL);
+        sleep(0);
     }
+    //printf("completed operation!");
     if(*o.retval == 1){
         return NULL;
     }else{
