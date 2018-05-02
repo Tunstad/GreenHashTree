@@ -31,7 +31,7 @@ pthread_t hb_thread_handler;
 
 #define PREFIX "GHT"
 
-//#define USE_POET // Power and performance control
+#define USE_POET // Power and performance control
 
 heartbeat_t* heart;
 poet_state* state;
@@ -212,6 +212,17 @@ db_t *db_new()
 #ifdef USE_POET
     /* init runtime control (e.g., POET) */
     hb_poet_init();
+
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    int rc = pthread_create(&hb_thread_handler, &attr, heartbeat_timer_thread, NULL);
+    if (rc) {
+        perror("failed: HB thread create\n");
+        exit(-1);
+    }
+
 #endif
 
     //Seed random at beginning of store
@@ -333,6 +344,7 @@ int db_free(db_t *db_data) {
  
     int rc = pthread_join(hb_thread_handler, NULL);
     if (rc) {
+        printf("IN GHT\n");
         perror("error, pthread_join\n");
         exit(-1);
     }
