@@ -223,7 +223,7 @@ db_t *db_new()
     *db->intval = 3579;
 
     //Get number of LOGICAL cpu cores from sysconf
-    int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+    int numofcpus = sysconf(_SC_NPROCESSORS_ONLN)-4;
     //int numofcpus = 2;
     db->numthreads = numofcpus;
     printf("Number of logical CPU's: %d\n", numofcpus);
@@ -292,7 +292,7 @@ int* db_get(db_t *db_data, int key) {
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
     while(*o.retval == 0){
-        sleep(0.00001);
+        sleep(0);
     }
     if(*o.retval == 1){
         return NULL;

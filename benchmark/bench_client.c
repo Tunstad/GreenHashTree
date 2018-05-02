@@ -40,6 +40,7 @@ typedef struct {
   size_t num_hits;
   double tput;
   double time;
+  int threadnumer;
 } thread_param;
 
 /* default parameter settings */
@@ -141,10 +142,16 @@ int bintointhash(char* data){
 /* executing queries at each thread */
 static void* queries_exec(void *param)
 {
+  thread_param* p = (thread_param*) param;
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(p->threadnumer, &cpuset); 
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
   /* get the key-value store structure */
   struct timeval tv_s, tv_e;
 
-  thread_param* p = (thread_param*) param;
 
   pthread_mutex_lock (&printmutex);
   printf("start benching using thread%"PRIu64"\n", p->tid);
@@ -273,6 +280,7 @@ main(int argc, char **argv)
     tp[t].num_ops = num_queries / num_threads;
     tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
     tp[t].time = tp[t].tput = 0.0;
+    tp[t].threadnumer = (t%4)+4;
     int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
     if (rc) {
       perror("failed: pthread_create\n");
