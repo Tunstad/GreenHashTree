@@ -496,7 +496,8 @@ record * find( node * root, int key, bool verbose ) {
     }else{
         //Simulate reading data 32 bytes of data here //
         record * foundnode = (record *)c->pointers[i];
-        strcpy(EXAMPLEDATA, foundnode->simdata);
+        if(foundnode!=NULL)
+            strcpy(EXAMPLEDATA, foundnode->simdata);
         return (record *)c->pointers[i];
     }
         
@@ -962,7 +963,8 @@ node * insert( node * root, int key, int value ) {
      */
     pointer = make_record(value);
     // Simulate actually writing 32 bytes of data here //
-    strcpy(pointer->simdata, EXAMPLEDATA);
+    if(pointer!=NULL)
+        strcpy(pointer->simdata, EXAMPLEDATA);
 
     
 

@@ -44,7 +44,7 @@ void queue_add(queue_t *queue, operation_t operation){
 
 
     //Unblock condition variable when new data has arrived
-    pthread_cond_signal(&queue->condvar);
+    pthread_cond_broadcast(&queue->condvar);
     //Unlock mutex after?
     pthread_mutex_unlock(&queue->mutex);
 
@@ -61,11 +61,16 @@ operation_t queue_read(queue_t *queue, int key){
         data.key = INT32_MAX;
 
         //If current is at lastadded, wait for new data to be added
-        while(queue->current == queue->lastadded && data.key != key){
+        while(queue->current == queue->lastadded || data.key != key){
+            printf("HI\n");
+
             pthread_cond_wait(&queue->condvar, &queue->mutex);
+            
             //Get next data from queue
             data = queue->array[queue->current % queue->lenght];
+
         }
+        printf("AFTER WAIT data key: %d - key: %d\n", data.key, key);
 
     }else{
         while(queue->current == queue->lastadded){
