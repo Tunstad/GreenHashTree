@@ -275,6 +275,7 @@ main(int argc, char **argv)
 
   int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
   int benchthreads = numofcpus/2;
+  int counter = 0;
 
   for (t = 0; t < num_threads; t++) {
     tp[t].queries = queries + t * (num_queries / num_threads);
@@ -282,7 +283,8 @@ main(int argc, char **argv)
     tp[t].num_ops = num_queries / num_threads;
     tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
     tp[t].time = tp[t].tput = 0.0;
-    tp[t].threadnumer = (t%benchthreads)+benchthreads;
+    tp[t].threadnumer = counter%numofcpus;
+    counter +=2;
     int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
     if (rc) {
       perror("failed: pthread_create\n");

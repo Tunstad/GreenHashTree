@@ -8,23 +8,6 @@
 #include "baseline.h"
 
 
-
-/* START POET & HEARTBEAT */
-
-// HB Interval (in useconds)
-#define HB_INTERVAL 10000
-int stop_heartbeat = 0;
-pthread_t hb_thread_handler;
-
-
-#define HB_ENERGY_IMPL
-#include <heartbeats/hb-energy.h>
-#include <heartbeats/heartbeat-accuracy-power.h>
-#include <poet/poet.h>
-#include <poet/poet_config.h>
-
-#define PREFIX "GHT"
-
 /* START POET & HEARTBEAT */
 
 // HB Interval (in useconds)

@@ -246,9 +246,11 @@ db_t *db_new()
     //Allocate space for subtrees 
     db->subtreelist = malloc(sizeof(subtree_t*)*numofcpus);
 
+    int counter = 1;
     //Start a subtree for each cpu
     for(i = 0; i < numofcpus; i++){
 
+        
         //Create subtree data struct
         subtree_t *subtreeStruct = malloc(sizeof(subtree_t));
         db->subtreelist[i] = subtreeStruct;
@@ -256,11 +258,12 @@ db_t *db_new()
         //Initialize message queue for this subtree
         subtreeStruct->msgq = queue_init(); 
         subtreeStruct->resq = queue_init();
-        subtreeStruct->threadnum = i;
+        subtreeStruct->threadnum = counter;
         
         //Start a new thread for this subtree
         pthread_t threadTree;
         pthread_create(&threadTree, NULL, subTreeFunc, subtreeStruct);
+        counter += 2;
     }
 
     printf("Finished set up of GreenHashTree!\n");
