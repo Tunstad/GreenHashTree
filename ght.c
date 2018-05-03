@@ -18,7 +18,7 @@
 /* START POET & HEARTBEAT */
 
 // HB Interval (in useconds)
-#define HB_INTERVAL 10000
+#define HB_INTERVAL 100000 //10000 by default
 int stop_heartbeat = 0;
 pthread_t hb_thread_handler;
 
@@ -31,13 +31,15 @@ pthread_t hb_thread_handler;
 
 #define PREFIX "GHT"
 
-#define USE_POET // Power and performance control
+//#define USE_POET // Power and performance control
+#define USE_HB
 
 heartbeat_t* heart;
 poet_state* state;
 static poet_control_state_t* control_states;
 static poet_cpu_state_t* cpu_states;
 unsigned int num_runs = 1000;
+int hbcount = 0;
 
 void *heartbeat_timer_thread(){
 
@@ -209,9 +211,10 @@ void* subTreeFunc(void* arg){
 /* Function to set up a new key-value store of GreenHashTree */
 db_t *db_new()
 {
-#ifdef USE_POET
+#ifdef USE_HB
     /* init runtime control (e.g., POET) */
     hb_poet_init();
+
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -222,9 +225,7 @@ db_t *db_new()
         perror("failed: HB thread create\n");
         exit(-1);
     }
-
 #endif
-
     //Seed random at beginning of store
     srand(time(NULL));
 
@@ -319,6 +320,7 @@ int* db_get(db_t *db_data, int key) {
         //nanosleep(&timestruct, NULL);
         sleep(0);
     }
+
     //printf("completed operation!");
     if(*o.retval == 1){
         return NULL;
@@ -338,8 +340,8 @@ int* db_get(db_t *db_data, int key) {
 }
 
 int db_free(db_t *db_data) {
+    #ifdef USE_HB
 
-#ifdef USE_POET
     stop_heartbeat = 1;
  
     int rc = pthread_join(hb_thread_handler, NULL);
@@ -348,9 +350,8 @@ int db_free(db_t *db_data) {
         perror("error, pthread_join\n");
         exit(-1);
     }
- 
     hb_poet_finish();
-#endif
+    #endif
 
     return 0 ;
 }

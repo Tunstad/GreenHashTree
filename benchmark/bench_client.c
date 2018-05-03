@@ -371,7 +371,8 @@ main(int argc, char **argv)
 
 /* End of second round */
 
-/* Third round (ALL thread/2) */
+/*
+// Third round (ALL thread/2) //
 
     printf("\n\nThird round of benchmark, ALL (%d) thread\n\n", num_threads);
 
@@ -390,7 +391,7 @@ main(int argc, char **argv)
         }
     }
 
-    /* Start the timer */
+    // Start the timer 
     signal(SIGALRM, trigger);
     alarm(duration);
 
@@ -413,8 +414,8 @@ main(int argc, char **argv)
 
     result.grand_total_time += result.total_time;
 
-    /* End of second round */
-
+    //End of second round 
+*/
 
   db_free(db_data);
 
