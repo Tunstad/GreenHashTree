@@ -25,13 +25,31 @@ pthread_t hb_thread_handler;
 
 #define PREFIX "GHT"
 
+/* START POET & HEARTBEAT */
+
+// HB Interval (in useconds)
+#define HB_INTERVAL 100000 //10000 by default
+int stop_heartbeat = 0;
+pthread_t hb_thread_handler;
+
+
+#define HB_ENERGY_IMPL
+#include <heartbeats/hb-energy.h>
+#include <heartbeats/heartbeat-accuracy-power.h>
+#include <poet/poet.h>
+#include <poet/poet_config.h>
+
+#define PREFIX "GHT"
+
 //#define USE_POET // Power and performance control
+#define USE_HB
 
 heartbeat_t* heart;
 poet_state* state;
 static poet_control_state_t* control_states;
 static poet_cpu_state_t* cpu_states;
 unsigned int num_runs = 1000;
+int hbcount = 0;
 
 void *heartbeat_timer_thread(){
 
@@ -96,11 +114,11 @@ void hb_poet_init() {
         exit(1);
     }
 #ifdef USE_POET
-    if (get_control_states("config/control_config", &control_states, &nstates)) {
+    if (get_control_states("benchmark/config/control_config", &control_states, &nstates)) {
         fprintf(stderr, "Failed to load control states.\n");
         exit(1);
     }
-    if (get_cpu_states("config/cpu_config", &cpu_states, &nstates)) {
+    if (get_cpu_states("benchmark/config/cpu_config", &cpu_states, &nstates)) {
         fprintf(stderr, "Failed to load cpu states.\n");
         exit(1);
     }
@@ -130,9 +148,20 @@ void hb_poet_finish() {
 /* Function to set up a new key-value store of GreenHashTree */
 db_t *db_new()
 {
-#ifdef USE_POET
+#ifdef USE_HB
     /* init runtime control (e.g., POET) */
     hb_poet_init();
+
+
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    int rc = pthread_create(&hb_thread_handler, &attr, heartbeat_timer_thread, NULL);
+    if (rc) {
+        perror("failed: HB thread create\n");
+        exit(-1);
+    }
 #endif
     db_t* db = malloc(sizeof(db_t));
     db->root = initialize_tree();
@@ -166,17 +195,18 @@ int* db_get(db_t *db_data, int key) {
 
 int db_free(db_t *db_data) {
 
-#ifdef USE_POET
+    #ifdef USE_HB
+
     stop_heartbeat = 1;
  
     int rc = pthread_join(hb_thread_handler, NULL);
     if (rc) {
+        printf("IN GHT\n");
         perror("error, pthread_join\n");
         exit(-1);
     }
- 
     hb_poet_finish();
-#endif
+    #endif
 
     return 0 ;
 }
