@@ -2,7 +2,7 @@
 #include "shmmiddleware.h"
 
 void *initialize_tree(){
-    map_t *map = shm_new(2000000);
+    map_t *map = shm_new(10000000);
 
     return map;
 }
