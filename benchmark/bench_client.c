@@ -130,7 +130,7 @@ int bintointhash(char* data){
   unsigned long int hashval;
   int i = 0;
 
-  while( hashval < UINT64_MAX && i < NKEY ) {
+  while( hashval < UINT32_MAX && i < NKEY ) {
     hashval = hashval << 8;
     hashval += data[ i ];
     i++;
@@ -154,7 +154,7 @@ static void* queries_exec(void *param)
 
 
   pthread_mutex_lock (&printmutex);
-  printf("start benching using thread%"PRIu64"\n", p->tid);
+  printf("start benching using thread %zu\n", p->tid);
   pthread_mutex_unlock (&printmutex);
 
   query* queries = p->queries;
@@ -205,7 +205,7 @@ static void* queries_exec(void *param)
   p->tput = nops / p->time;
 
   pthread_mutex_lock (&printmutex);
-  printf("thread%"PRIu64" gets %" PRIu64 " items in %.2f sec \n",
+  printf("thread%zu gets %zu items in %.2f sec \n",
          p->tid, nops, p->time);
   printf("#put = %zu, #get = %zu\n", p->num_puts, p->num_gets);
   printf("#miss = %zu, #hits = %zu\n", p->num_miss, p->num_hits);
@@ -221,7 +221,7 @@ static void* queries_exec(void *param)
 static void usage(char* binname)
 {
   printf("%s [-t #] [-b #] [-l trace] [-d #] [-h]\n", binname);
-  printf("\t-t #: number of working threads, by default %" PRIu64 "\n", num_threads);
+  printf("\t-t #: number of working threads, by default %zu\n", num_threads);
   printf("\t-d #: duration of the test in seconds, by default %f\n", duration);
   printf("\t-l trace: e.g., /path/to/ycsbtrace, required\n");
   printf("\t-h  : show usage\n");
@@ -236,7 +236,7 @@ main(int argc, char **argv)
     exit(-1);
   }
 
-  char ch;
+  int ch;
   while ((ch = getopt(argc, argv, "t:d:h:l:")) != -1) {
     switch (ch) {
     case 't': num_threads = atoi(optarg); break;
