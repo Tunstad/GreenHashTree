@@ -130,7 +130,7 @@ int bintointhash(char* data){
   unsigned long int hashval;
   int i = 0;
 
-  while( hashval < UINT32_MAX && i < NKEY ) {
+  while( hashval < UINT64_MAX && i < NKEY ) {
     hashval = hashval << 8;
     hashval += data[ i ];
     i++;
