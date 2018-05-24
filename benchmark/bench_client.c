@@ -40,6 +40,7 @@ typedef struct {
   size_t num_hits;
   double tput;
   double time;
+  int threadnumer;
 } thread_param;
 
 /* default parameter settings */
@@ -129,7 +130,7 @@ int bintointhash(char* data){
   unsigned long int hashval;
   int i = 0;
 
-  while( hashval < UINT64_MAX && i < NKEY ) {
+  while( hashval < UINT32_MAX && i < NKEY ) {
     hashval = hashval << 8;
     hashval += data[ i ];
     i++;
@@ -141,13 +142,19 @@ int bintointhash(char* data){
 /* executing queries at each thread */
 static void* queries_exec(void *param)
 {
+  thread_param* p = (thread_param*) param;
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(p->threadnumer, &cpuset); 
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
   /* get the key-value store structure */
   struct timeval tv_s, tv_e;
 
-  thread_param* p = (thread_param*) param;
 
   pthread_mutex_lock (&printmutex);
-  printf("start benching using thread%"PRIu64"\n", p->tid);
+  printf("start benching using thread %zu\n", p->tid);
   pthread_mutex_unlock (&printmutex);
 
   query* queries = p->queries;
@@ -198,7 +205,7 @@ static void* queries_exec(void *param)
   p->tput = nops / p->time;
 
   pthread_mutex_lock (&printmutex);
-  printf("thread%"PRIu64" gets %" PRIu64 " items in %.2f sec \n",
+  printf("thread%zu gets %zu items in %.2f sec \n",
          p->tid, nops, p->time);
   printf("#put = %zu, #get = %zu\n", p->num_puts, p->num_gets);
   printf("#miss = %zu, #hits = %zu\n", p->num_miss, p->num_hits);
@@ -214,7 +221,7 @@ static void* queries_exec(void *param)
 static void usage(char* binname)
 {
   printf("%s [-t #] [-b #] [-l trace] [-d #] [-h]\n", binname);
-  printf("\t-t #: number of working threads, by default %" PRIu64 "\n", num_threads);
+  printf("\t-t #: number of working threads, by default %zu\n", num_threads);
   printf("\t-d #: duration of the test in seconds, by default %f\n", duration);
   printf("\t-l trace: e.g., /path/to/ycsbtrace, required\n");
   printf("\t-h  : show usage\n");
@@ -229,7 +236,7 @@ main(int argc, char **argv)
     exit(-1);
   }
 
-  char ch;
+  int ch;
   while ((ch = getopt(argc, argv, "t:d:h:l:")) != -1) {
     switch (ch) {
     case 't': num_threads = atoi(optarg); break;
@@ -266,6 +273,9 @@ main(int argc, char **argv)
 
   printf("\n\nFirst round of benchmark, ALL (%d) threads\n\n", num_threads);
 
+  int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+  int benchthreads = numofcpus/2;
+  int counter = 0;
 
   for (t = 0; t < num_threads; t++) {
     tp[t].queries = queries + t * (num_queries / num_threads);
@@ -273,6 +283,8 @@ main(int argc, char **argv)
     tp[t].num_ops = num_queries / num_threads;
     tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
     tp[t].time = tp[t].tput = 0.0;
+    tp[t].threadnumer = counter%numofcpus;
+    counter +=2;
     int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
     if (rc) {
       perror("failed: pthread_create\n");
@@ -300,7 +312,7 @@ main(int argc, char **argv)
     void *status;
     int rc = pthread_join(threads[t], &status);
     if (rc) {
-      perror("error, pthread_join\n");
+      perror("error, pthread_join");
       exit(-1);
     }
     result.total_time = (result.total_time > tp[t].time) ? result.total_time : tp[t].time;
@@ -317,7 +329,7 @@ main(int argc, char **argv)
 /* End of first round */
 
 /* Second round (1 thread) */
-
+/*
     printf("\n\nSecond round of benchmark, 1 thread\n\n");
 
 
@@ -327,6 +339,7 @@ main(int argc, char **argv)
         tp[t].num_ops = num_queries / num_threads;
         tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
         tp[t].time = tp[t].tput = 0.0;
+        tp[t].threadnumer = (t%benchthreads)+benchthreads;
         int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
         if (rc) {
             perror("failed: pthread_create\n");
@@ -334,7 +347,7 @@ main(int argc, char **argv)
         }
     }
 
-    /* Start the timer */
+ 
     signal(SIGALRM, trigger);
     alarm(duration);
 
@@ -356,10 +369,12 @@ main(int argc, char **argv)
 
     result.grand_total_time += result.total_time;
     stop = 0;
+    */
 
 /* End of second round */
 
-/* Third round (ALL thread/2) */
+/*
+// Third round (ALL thread/2) //
 
     printf("\n\nThird round of benchmark, ALL (%d) thread\n\n", num_threads);
 
@@ -369,6 +384,7 @@ main(int argc, char **argv)
         tp[t].num_ops = num_queries / num_threads;
         tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
         tp[t].time = tp[t].tput = 0.0;
+        tp[t].threadnumer = (t%benchthreads)+benchthreads;
 
         int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
         if (rc) {
@@ -377,7 +393,7 @@ main(int argc, char **argv)
         }
     }
 
-    /* Start the timer */
+    // Start the timer 
     signal(SIGALRM, trigger);
     alarm(duration);
 
@@ -386,7 +402,7 @@ main(int argc, char **argv)
         void *status;
         int rc = pthread_join(threads[t], &status);
         if (rc) {
-            perror("error, pthread_join\n");
+            perror("error, pthread_join");
             exit(-1);
         }
         result.total_time = (result.total_time > tp[t].time) ? result.total_time : tp[t].time;
@@ -400,8 +416,8 @@ main(int argc, char **argv)
 
     result.grand_total_time += result.total_time;
 
-    /* End of second round */
-
+    //End of second round 
+*/
 
   db_free(db_data);
 
