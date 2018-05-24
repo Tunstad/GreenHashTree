@@ -6,7 +6,7 @@
 typedef struct{
     queue_t* msgq;  //Message queue held by every subtree
     queue_t* resq;  //Result queue;
-    int threadnum;  //Thread number of this subtree
+    int cpunum;  //Thread number of this subtree
 }subtree_t;
 
 typedef struct{

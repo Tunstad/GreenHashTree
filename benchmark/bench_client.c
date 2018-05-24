@@ -40,7 +40,7 @@ typedef struct {
   size_t num_hits;
   double tput;
   double time;
-  int threadnumer;
+  int cpunumber;
 } thread_param;
 
 /* default parameter settings */
@@ -146,7 +146,7 @@ static void* queries_exec(void *param)
 
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-  CPU_SET(p->threadnumer, &cpuset); 
+  CPU_SET(p->cpunumber, &cpuset); 
   pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   /* get the key-value store structure */
@@ -283,7 +283,7 @@ main(int argc, char **argv)
     tp[t].num_ops = num_queries / num_threads;
     tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
     tp[t].time = tp[t].tput = 0.0;
-    tp[t].threadnumer = counter%numofcpus;
+    tp[t].cpunumber = counter%numofcpus;
     counter +=2;
     int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
     if (rc) {
@@ -339,7 +339,7 @@ main(int argc, char **argv)
         tp[t].num_ops = num_queries / num_threads;
         tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
         tp[t].time = tp[t].tput = 0.0;
-        tp[t].threadnumer = (t%benchthreads)+benchthreads;
+        tp[t].cpunumber = (t%benchthreads)+benchthreads;
         int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
         if (rc) {
             perror("failed: pthread_create\n");
@@ -384,7 +384,7 @@ main(int argc, char **argv)
         tp[t].num_ops = num_queries / num_threads;
         tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
         tp[t].time = tp[t].tput = 0.0;
-        tp[t].threadnumer = (t%benchthreads)+benchthreads;
+        tp[t].cpunumber = (t%benchthreads)+benchthreads;
 
         int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
         if (rc) {

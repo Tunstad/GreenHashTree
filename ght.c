@@ -13,7 +13,13 @@
 #include "SVEB/vebmiddleware.h"
 
 //Setaffinify is linux specific, so to run on other os comment out this line
+//but then you will not have advantage of running on specific cores.
 #define LINUX
+
+// Power and performance control
+//#define USE_POET 
+// Used without poet to measure energy usage
+//#define USE_HB   
 
 /* START POET & HEARTBEAT */
 
@@ -31,15 +37,10 @@ pthread_t hb_thread_handler;
 
 #define PREFIX "GHT"
 
-//#define USE_POET // Power and performance control
-//#define USE_HB
-
 heartbeat_t* heart;
 poet_state* state;
 static poet_control_state_t* control_states;
 static poet_cpu_state_t* cpu_states;
-unsigned int num_runs = 1000;
-int hbcount = 0;
 
 void *heartbeat_timer_thread(){
 
@@ -133,7 +134,7 @@ void hb_poet_finish() {
 }
 /* END POET AND HEARTBEAT */
 
-// Example Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+// Hash Function used, proven to provide good uniform distrbution, see report for source.
 unsigned int hash(unsigned int x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
@@ -147,32 +148,33 @@ unsigned int unhash(unsigned int x) {
     return x;
 }
 
-/* Function for running subtree, takes in a subtree struct to hold queue and possible other info*/
+/* Function for running subtree, takes in a subtree struct to hold queue and possible other info */
 void* subTreeFunc(void* arg){
-    int* i;
     subtree_t * subtree = (subtree_t*) arg;
-    printf("Starting subtree number: %d \n", subtree->threadnum);
+    int* i;
+
+    printf("Starting subtree %d.. \n", subtree->cpunum);
+
+    //Set subtree to run on a specific logical cpu as provided by cpunum
     #ifdef LINUX
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
-        CPU_SET(subtree->threadnum, &cpuset); 
+        CPU_SET(subtree->cpunum, &cpuset); 
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     #endif
 
     node* root = initialize_tree(); 
 
-    // used here to set cpu core to run on
     while(1){
 
         // Read operation from queue here, this should later be invoked by db_get
         operation_t o = queue_read(subtree->msgq, INT32_MAX);
 
-         //Print operation read from queue 
-        //printf("Operation on Key: %d and Value %d should run on cpu %d \n", o.key, o.value,  subtree->threadnum);
 
         if(o.type == OP_ADD){
             //Insert data into Bplustree
             root = insert_into_tree(root, o.key, o.value);
+            //Set value to 2 to indicate insert has been completed.
             *o.retval = 2;
 
         }else if(o.type == OP_READ){
@@ -180,13 +182,15 @@ void* subTreeFunc(void* arg){
             i = search_tree(root, o.key);
 
             if(i == NULL){
+                //Set value to 1 to indicate search was completed but result was not found
                 *o.retval = 1;
             }else{
+                //Set value to 2 to indicate search was completed and result was found
                 *o.retval = 2;
             }
             
         }else{
-            printf("!!! TypeERROR!!! type: %d \n\n", o.type);
+            printf("TypeError in Subtree: %d \n", o.type);
         }
 
     }
@@ -218,7 +222,7 @@ db_t *db_new()
     int i;
 
     db->intval = malloc(sizeof(int));
-    *db->intval = 3579;
+    *db->intval = INT32_MAX;
 
     //Get number of LOGICAL cpu cores from sysconf, use only the first half for subtrees
     //other half will be used for benchmarking.
@@ -241,7 +245,7 @@ db_t *db_new()
         //Initialize message queue for this subtree
         subtreeStruct->msgq = queue_init(); 
         subtreeStruct->resq = queue_init();
-        subtreeStruct->threadnum = counter;
+        subtreeStruct->cpunum = counter;
         
         //Start a new thread for this subtree
         pthread_t threadTree;
@@ -264,15 +268,17 @@ int* db_put(db_t *db_data, int key, int val) {
     o.key = key;
     o.value = val;
     o.type = OP_ADD;
-    o.retval = malloc(sizeof(int));
+    o.retval = malloc(sizeof(int));   //Malloc for each operation?
     *o.retval = 0;
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
+    //While return value has not been set, sleep to yield control
     while(*o.retval == 0){
         sleep(0);
     }
+    //Return value has been set to indicate the put was completed
 
     return db_data->intval;
 }
@@ -287,20 +293,19 @@ int* db_get(db_t *db_data, int key) {
     o.key = key;
     o.value = 0;
     o.type = OP_READ;
-    o.retval = malloc(sizeof(int));
+    o.retval = malloc(sizeof(int));  //Malloc for each operation?
     *o.retval = 0;
-    struct timespec timestruct;
-    timestruct.tv_sec = 0;
-    timestruct.tv_nsec = 1;
-
 
     //Send operation to message queue on the desired subtree
     queue_add(db_data->subtreelist[(int)cpunumber]->msgq, o);
 
+    //While return value has not been set, sleep to yield control
     while(*o.retval == 0){
         sleep(0);
     }
 
+    //If return value is 1 the value was not found,
+    //otherwise return static intval as we only care about if it was found or not
     if(*o.retval == 1){
         return NULL;
     }else{

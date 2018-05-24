@@ -4,7 +4,7 @@
 #include <string.h>
 #include "../config.h"
 
-// Simple Hash Function https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+// Hash Function used, proven to provide good uniform distrbution, see report for source.
 unsigned int simplehash(unsigned int x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
