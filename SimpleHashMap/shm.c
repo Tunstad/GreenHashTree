@@ -21,7 +21,11 @@ unsigned int simpleunhash(unsigned int x) {
 map_t *shm_new( int size ) {
     map_t *map = (map_t*)malloc(sizeof(map_t));
     map->size = size;
+    strcpy(map->EXAMPLEDATA_R, "abcdefghijklmnopqrstuvwxyzABCDE");
+    strcpy(map->EXAMPLEDATA_W, "abcdefghijklmnopqrstuvwxyzABCDE");
     map->table = malloc(sizeof(dataval_t)*size);
+    if(!map->table)
+        printf("Allocation error in NEW \n");
     memset(map->table, 0, sizeof(dataval_t)*size);
     pthread_rwlock_init(&map->lock, NULL);
 
@@ -40,7 +44,7 @@ void shm_put(map_t *map, int key, int value){
         record->val = value;
         record->next = NULL;
         record->used = true;
-        strcpy(record->simdata, EXAMPLEDATA);
+        strncpy(record->simdata, map->EXAMPLEDATA_R, 32);
 
 
         
@@ -48,7 +52,7 @@ void shm_put(map_t *map, int key, int value){
         dataval_t* record = &map->table[bucket];
         if(record->key==key){
             record->val = value;
-            strcpy(record->simdata, EXAMPLEDATA);
+            strncpy(record->simdata, map->EXAMPLEDATA_R, 32);
             pthread_rwlock_unlock(&map->lock);
             return;
         }
@@ -59,42 +63,50 @@ void shm_put(map_t *map, int key, int value){
             //Overwrite key if existing
             if(record->key==key){
                 record->val = value;
-                strcpy(record->simdata, EXAMPLEDATA);
+                strncpy(record->simdata, map->EXAMPLEDATA_R, 32);
                 pthread_rwlock_unlock(&map->lock);
                 return;
             }
         }
         dataval_t* new_record = malloc(sizeof(dataval_t));
+        if(!new_record)
+            printf("Allocation error in PUT \n");
         new_record->key = key;
         new_record->val = value;
         new_record->next = NULL;
         new_record->used = true;
         record->next = new_record;
-        strcpy(record->simdata, EXAMPLEDATA);
-    }
+
+        strncpy(record->simdata, map->EXAMPLEDATA_R, 32);
+        }
+
     pthread_rwlock_unlock(&map->lock);
 }
 
 
 int* shm_get(map_t *map, int key){
     int bucket = simplehash(key) % map->size;
-
+    
     pthread_rwlock_rdlock(&map->lock);
-
     dataval_t* record = &map->table[bucket];
+
+    if(record==NULL)
+        return NULL;
+
     if(record->used == false){
         pthread_rwlock_unlock(&map->lock);
         return NULL;
     }else{
         if(record->key == key){
+            
+            strcpy(map->EXAMPLEDATA_W, record->simdata);
             pthread_rwlock_unlock(&map->lock);
-            strcpy(EXAMPLEDATA, record->simdata);
             return &record->val;
         }else{
             do{
                 if(record->key == key){
+                    strcpy(map->EXAMPLEDATA_W, record->simdata);
                     pthread_rwlock_unlock(&map->lock);
-                    strcpy(EXAMPLEDATA, record->simdata);
                     return &record->val;
                 }
                 record = record->next;

@@ -16,6 +16,8 @@ typedef struct{
     dataval_t *table;
     int size;
     pthread_rwlock_t lock;
+    char EXAMPLEDATA_R[32];
+    char EXAMPLEDATA_W[32];
 }map_t;
 
 extern map_t* shm_new(int size);
