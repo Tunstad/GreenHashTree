@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O2 #-Wall #-Wextra
 INC =
 LIB = -pthread -lm
-BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm -pg
+BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
 
 ghtbpt = ght.o msgq.o bpt.o bptmiddleware.o
 ghtsveb = ght.o msgq.o SVEB/SVEB.so

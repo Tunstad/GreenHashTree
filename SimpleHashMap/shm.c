@@ -46,8 +46,23 @@ void shm_put(map_t *map, int key, int value){
         
     }else{
         dataval_t* record = &map->table[bucket];
+        if(record->key==key){
+            record->val = value;
+            strcpy(record->simdata, EXAMPLEDATA);
+            pthread_rwlock_unlock(&map->lock);
+            return;
+        }
+            
+        //Iterate to next key
         while(record->next != NULL){
             record = record->next;
+            //Overwrite key if existing
+            if(record->key==key){
+                record->val = value;
+                strcpy(record->simdata, EXAMPLEDATA);
+                pthread_rwlock_unlock(&map->lock);
+                return;
+            }
         }
         dataval_t* new_record = malloc(sizeof(dataval_t));
         new_record->key = key;
