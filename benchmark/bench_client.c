@@ -126,6 +126,10 @@ static query *queries_init(char* filename)
   printf("queries_init...done\n");
   return queries;
 }
+
+//Hashes the trace file querys key from char* to an int.
+//This allows the use of existing pre-code datastructures supporting int operations.
+//Will lead to some hash collisions and faulty key matching, but should be an insignificant amount for testing.
 int bintointhash(char* data){
   unsigned long int hashval;
   int i = 0;
@@ -144,6 +148,9 @@ static void* queries_exec(void *param)
 {
   thread_param* p = (thread_param*) param;
 
+  //Client threads are divided and pinned to halv of the total logical CPUs of the system.
+  //For a system with two sockets, all clients reside at a single socket and the data structures at the other.
+  //This allows the data structures to be unaffected by clients work, prevents uneccesary cache invalidation and so on.
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(p->cpunumber, &cpuset); 
@@ -152,42 +159,54 @@ static void* queries_exec(void *param)
   /* get the key-value store structure */
   struct timeval tv_s, tv_e;
 
-
   pthread_mutex_lock (&printmutex);
   printf("start benching using thread %zu\n", p->tid);
   pthread_mutex_unlock (&printmutex);
 
+  //Gets the queries assigned to this client.
   query* queries = p->queries;
   p->time = 0;
 
+  //Structure to hold keys after hashing.
+  int intqueries[num_queries/num_threads];
 
-  int intqueries[num_queries];
-  for(int j = 0; j < num_queries; j++){
+  //For each query assigned to this client.
+  for(int j = 0; j < num_queries/num_threads; j++){
+
+    //Convert char* key for each query to an int key to support underlying data structure.
     intqueries[j] = bintointhash(queries[j].hashed_key);
-    //printf("Hashed into integer %d \n", intqueries[j]);
   }
 
   /* Strictly obey the timer */
   while (!stop) {
     gettimeofday(&tv_s, NULL);  // start timing
+
+    //Iterate over operations.
     for (size_t i = 0 ; i < p->num_ops; i++) {
       enum query_types type = queries[i].type;
-      //char *key = queries[i].hashed_key;
       int key = intqueries[i];
+
+      //Static int is sent for val to put, data structure simulates write of int size.
       int buf = NVAL;
 
+      //If operation PUT.
       if (type == query_put) {
         db_put(db_data, key, buf);
         p->num_puts++;
+
+      //If operation GET.
       } else if (type == query_get) {
         int *val = db_get(db_data, key);
         p->num_gets++;
+
+        //If key is not in data structure.
         if (val == NULL) {
           // cache miss, put something (garbage) in cache
           p->num_miss++;
           db_put(db_data, key, buf);
+
+        //Key hit.
         } else {
-          //free(val);
           p->num_hits++;
         }
       } else {
@@ -266,13 +285,13 @@ main(int argc, char **argv)
   size_t t;
   thread_param tp[num_threads];
 
+  //Initialize data structure.
   db_data = db_new();
-
-/* First round (ALL THREADS) */
-
 
   printf("\n\nFirst round of benchmark, ALL (%d) threads\n\n", num_threads);
 
+  //Find number of logical CPUs available in the system. We want clients operating on halv the CPUs.
+  //Other halv is used for the data structure.
   int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
   int benchthreads = numofcpus/2;
   int counter = 0;
@@ -283,6 +302,8 @@ main(int argc, char **argv)
     tp[t].num_ops = num_queries / num_threads;
     tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
     tp[t].time = tp[t].tput = 0.0;
+
+    //Figure out which CPU the client should be pinned to and spawn client.
     tp[t].cpunumber = counter%numofcpus;
     counter +=2;
     int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
@@ -326,99 +347,7 @@ main(int argc, char **argv)
   result.grand_total_time += result.total_time;
   stop = 0;
 
-/* End of first round */
-
-/* Second round (1 thread) */
-/*
-    printf("\n\nSecond round of benchmark, 1 thread\n\n");
-
-
-    for (t = 0; t < 1; t++) {
-        tp[t].queries = queries + t * (num_queries / num_threads);
-        tp[t].tid     = t;
-        tp[t].num_ops = num_queries / num_threads;
-        tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
-        tp[t].time = tp[t].tput = 0.0;
-        tp[t].cpunumber = (t%benchthreads)+benchthreads;
-        int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
-        if (rc) {
-            perror("failed: pthread_create\n");
-            exit(-1);
-        }
-    }
-
- 
-    signal(SIGALRM, trigger);
-    alarm(duration);
-
-
-    for (t = 0; t < 1; t++) {
-        void *status;
-        int rc = pthread_join(threads[t], &status);
-        if (rc) {
-            perror("error, pthread_join\n");
-            exit(-1);
-        }
-        result.total_time = (result.total_time > tp[t].time) ? result.total_time : tp[t].time;
-        result.total_tput += tp[t].tput;
-        result.total_hits += tp[t].num_hits;
-        result.total_miss += tp[t].num_miss;
-        result.total_gets += tp[t].num_gets;
-        result.total_puts += tp[t].num_puts;
-    }
-
-    result.grand_total_time += result.total_time;
-    stop = 0;
-    */
-
-/* End of second round */
-
-/*
-// Third round (ALL thread/2) //
-
-    printf("\n\nThird round of benchmark, ALL (%d) thread\n\n", num_threads);
-
-    for (t = 0; t < num_threads; t++) {
-        tp[t].queries = queries + t * (num_queries / num_threads);
-        tp[t].tid     = t;
-        tp[t].num_ops = num_queries / num_threads;
-        tp[t].num_puts = tp[t].num_gets = tp[t].num_miss = tp[t].num_hits = 0;
-        tp[t].time = tp[t].tput = 0.0;
-        tp[t].cpunumber = (t%benchthreads)+benchthreads;
-
-        int rc = pthread_create(&threads[t], &attr, queries_exec, (void *) &tp[t]);
-        if (rc) {
-            perror("failed: pthread_create\n");
-            exit(-1);
-        }
-    }
-
-    // Start the timer 
-    signal(SIGALRM, trigger);
-    alarm(duration);
-
-
-    for (t = 0; t < num_threads; t++) {
-        void *status;
-        int rc = pthread_join(threads[t], &status);
-        if (rc) {
-            perror("error, pthread_join");
-            exit(-1);
-        }
-        result.total_time = (result.total_time > tp[t].time) ? result.total_time : tp[t].time;
-
-        result.total_tput += tp[t].tput;
-        result.total_hits += tp[t].num_hits;
-        result.total_miss += tp[t].num_miss;
-        result.total_gets += tp[t].num_gets;
-        result.total_puts += tp[t].num_puts;
-    }
-
-    result.grand_total_time += result.total_time;
-
-    //End of second round 
-*/
-
+  //Free the data structure.
   db_free(db_data);
 
   printf("total_time = %.2f\n", result.grand_total_time);
