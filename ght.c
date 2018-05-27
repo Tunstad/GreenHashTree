@@ -23,7 +23,7 @@
 
 /* START POET & HEARTBEAT */
 // HB Interval (in useconds)
-#define HB_INTERVAL 100000 //10000 by default, set to 100000 to measure every 0.1 seconds
+#define HB_INTERVAL 10000 //10000 by default, set to 100000 to measure every 0.1 seconds
 int stop_heartbeat = 0;
 pthread_t hb_thread_handler;
 
@@ -39,6 +39,7 @@ heartbeat_t* heart;
 poet_state* state;
 static poet_control_state_t* control_states;
 static poet_cpu_state_t* cpu_states;
+int heartbeatcount = 0;
 
 //Timer thread will tick a heartbeat every and apply poet control if enabled
 //This is only used for energy measurements, while for poet heatbeat should tick every job
@@ -63,25 +64,25 @@ void hb_poet_init() {
     unsigned int nstates;
 
     if(getenv(PREFIX"_MIN_HEART_RATE") == NULL) {
-        min_heartrate = 0.0;
+        min_heartrate = 120000;
     }
     else {
         min_heartrate = atof(getenv(PREFIX"_MIN_HEART_RATE"));
     }
     if(getenv(PREFIX"_MAX_HEART_RATE") == NULL) {
-        max_heartrate = 100.0;
+        max_heartrate = min_heartrate;
     }
     else {
         max_heartrate = atof(getenv(PREFIX"_MAX_HEART_RATE"));
     }
     if(getenv(PREFIX"_WINDOW_SIZE") == NULL) {
-        window_size = 30;
+        window_size = 1000;
     }
     else {
         window_size = atoi(getenv(PREFIX"_WINDOW_SIZE"));
     }
     if(getenv(PREFIX"_POWER_TARGET") == NULL) {
-        power_target = 70;
+        power_target = 150;
     }
     else {
         power_target = atof(getenv(PREFIX"_POWER_TARGET"));
@@ -284,6 +285,12 @@ int* db_put(db_t *db_data, int key, int val) {
         sleep(0);
     }
 
+#ifdef USE_POET
+    //Count job for POET
+    heartbeatcount += 1;
+    heartbeat_acc(heart, heartbeatcount, 1);
+    poet_apply_control(state);
+#endif
     //Return value has been set to indicate the put was completed
     return db_data->intval;
 }
@@ -311,6 +318,13 @@ int* db_get(db_t *db_data, int key) {
         sleep(0);
     }
 
+       
+#ifdef USE_POET
+    //Count job for POET 
+    heartbeatcount += 1;
+    heartbeat_acc(heart, heartbeatcount, 1);
+    poet_apply_control(state);
+#endif
     //If return value is 1 the value was not found so we return NULL,
     //If return value is 2 return static intval to indicate it was found
     if(*o.retval == 1){
