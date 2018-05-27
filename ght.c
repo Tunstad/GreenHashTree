@@ -23,7 +23,7 @@
 
 /* START POET & HEARTBEAT */
 // HB Interval (in useconds)
-#define HB_INTERVAL 10000 //10000 by default, set to 100000 to measure every 0.1 seconds
+#define HB_INTERVAL 100000 //10000 by default, set to 100000 to measure every 0.1 seconds
 int stop_heartbeat = 0;
 pthread_t hb_thread_handler;
 
@@ -148,7 +148,7 @@ unsigned int unhash(unsigned int x) {
 }
 
 /* Function for running subtree, takes in a subtree struct to hold queue and other specific info */
-void* subTreeFunc(void* arg){
+void* subStructFunc(void* arg){
     substruct_t * subtree = (substruct_t*) arg;
     int* i;
 
@@ -254,7 +254,7 @@ db_t *db_new()
         
         //Start a new thread for this subtree, will be pinned to the set cpunum
         pthread_t threadTree;
-        pthread_create(&threadTree, NULL, subTreeFunc, subtreeStruct);
+        pthread_create(&threadTree, NULL, subStructFunc, subtreeStruct);
         cpunum += 2;
     }
 
