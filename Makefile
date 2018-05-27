@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O2 #-Wall #-Wextra
 INC =
 LIB = -pthread -lm
-BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm
+BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm #-pg
 
 ghtbpt = ght.o msgq.o bpt.o bptmiddleware.o
 ghtsveb = ght.o msgq.o SVEB/SVEB.so
@@ -12,7 +12,7 @@ blbpt = baseline.o msgq.o bpt.o bptmiddleware.o
 blsveb = baseline.o msgq.o SVEB/SVEB.so
 blshm = baseline.o msgq.o shm.o shmmiddleware.o
 
-all: bench_ght_btp
+all: bench_ght_shm
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ $(INC) $(LIB)

@@ -7,14 +7,16 @@
 #include "SVEB/vebmiddleware.h"
 #include "baseline.h"
 
-
+// Power and performance control
+//#define USE_POET 
+// Used without poet to measure energy usage
+#define USE_HB  
+ 
 /* START POET & HEARTBEAT */
-
 // HB Interval (in useconds)
-#define HB_INTERVAL 100000 //10000 by default
+#define HB_INTERVAL 100000 //10000 by default, set to 100000 to measure every 0.1 seconds
 int stop_heartbeat = 0;
 pthread_t hb_thread_handler;
-
 
 #define HB_ENERGY_IMPL
 #include <heartbeats/hb-energy.h>
@@ -24,31 +26,26 @@ pthread_t hb_thread_handler;
 
 #define PREFIX "GHT"
 
-//#define USE_POET // Power and performance control
-#define USE_HB
-
 heartbeat_t* heart;
 poet_state* state;
 static poet_control_state_t* control_states;
 static poet_cpu_state_t* cpu_states;
-unsigned int num_runs = 1000;
-int hbcount = 0;
 
+//Timer thread will tick a heartbeat every and apply poet control if enabled
+//This is only used for energy measurements, while for poet heatbeat should tick every job
 void *heartbeat_timer_thread(){
-
     int i = 0;
     while(!stop_heartbeat){
-
         heartbeat_acc(heart, i, 1);
 #ifdef USE_POET
         poet_apply_control(state);
 #endif
         i++;
         usleep(HB_INTERVAL);
-
     }
 }
 
+//Initialize hb/poet with dafault values for max/min heartrate, window size and desired power target
 void hb_poet_init() {
     float min_heartrate;
     float max_heartrate;
@@ -114,7 +111,7 @@ void hb_poet_init() {
     printf("heartbeat init'd\n");
 
 }
-
+//Called by db_free to finish HB/poet
 void hb_poet_finish() {
 #ifdef USE_POET
     poet_destroy(state);
@@ -128,13 +125,12 @@ void hb_poet_finish() {
 
 
 
-/* Function to set up a new key-value store of GreenHashTree */
+/* Function to set up a new key-value store with no partitioning */
 db_t *db_new()
 {
 #ifdef USE_HB
     /* init runtime control (e.g., POET) */
     hb_poet_init();
-
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -146,50 +142,50 @@ db_t *db_new()
         exit(-1);
     }
 #endif
+    //Allocate memory for db-struct
     db_t* db = malloc(sizeof(db_t));
-    db->root = initialize_tree();
+    //Initialze a single data strucutre for db
+    db->root = init_struct();
+     //Static int to return instead of actual values
     db->intval = malloc(sizeof(int));
     *db->intval = 3579;
     return db;
-
 }
 
-/* Function for putting data into GreenHashTree */
+/* Function for putting data into structure */
 int* db_put(db_t *db_data, int key, int val) {
 
-    db_data->root = insert_into_tree(db_data->root, key, val);
-
+    //Put data into structure
+    db_data->root = insert_into_struct(db_data->root, key, val);
     return db_data->intval;
 }
 
+/* Function for getting data from structure */
 int* db_get(db_t *db_data, int key) {
-    
     int * i;
-    i = search_tree(db_data->root, key);
 
+    //Search strucutre for data with key
+    i = search_struct(db_data->root, key);
+
+    //If struct returned NULL the data was not found, benchmark should count MISS with NULL
     if(i == NULL){
-        // MISS
         return NULL;
     }else{
-        // HIT, value not important
+        //If data was found return static value to indicate it was found
         return db_data->intval;
     }
 }
-
+/* Function to shut down db */
 int db_free(db_t *db_data) {
-
+    //Stop heartbeat (measurements will be written to heartbeat.log)
     #ifdef USE_HB
-
     stop_heartbeat = 1;
- 
     int rc = pthread_join(hb_thread_handler, NULL);
     if (rc) {
-        printf("IN GHT\n");
         perror("error, pthread_join\n");
         exit(-1);
     }
     hb_poet_finish();
     #endif
-
     return 0 ;
 }

@@ -3,6 +3,14 @@
  */
 #define Version "1.13"
 /*
+    Modified for benchmarking in INF3910-2 Assignment
+    by Tobias Olsen and Petter Tunstad
+*/
+/*
+    Made concurrent for INF2202 class
+    by Petter Tunstad
+*/
+/*
     Added multi-threaded benchmarks and correctness tests
     for INF-2202 class
     by Ibrahim Umar
@@ -962,7 +970,7 @@ node * insert( node * root, int key, int value ) {
      * value.
      */
     pointer = make_record(value);
-    // Simulate actually writing 32 bytes of data here //
+    // Simulate writing 32 bytes of data here //
     if(pointer!=NULL)
         strcpy(pointer->simdata, EXAMPLEDATA);
 

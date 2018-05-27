@@ -6,8 +6,8 @@
 
 
 typedef struct{
-    node* root;
-    int* intval;
+    node* root;      //Root value returned when adding to substruct, required for B+ Tree
+    int* intval;     //Static int value returned to indicate value was found
 }db_t;
 
 db_t *db_new();

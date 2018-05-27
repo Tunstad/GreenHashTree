@@ -5,14 +5,14 @@
 
 typedef struct{
     queue_t* msgq;  //Message queue held by every subtree
-    queue_t* resq;  //Result queue;
-    int cpunum;  //Thread number of this subtree
-}subtree_t;
+    queue_t* resq;  //Result queue(Deprecated);
+    int cpunum;     //Thread number of this subtree
+}substruct_t;
 
 typedef struct{
-    int numthreads;             //Number of threads/subtrees in database
-    subtree_t** subtreelist;    //List of subtrees in database
-    int* intval;
+    int numthreads;                 //Number of threads/subtrees in database
+    substruct_t** substructlist;    //List of subtrees in database
+    int* intval;                    //Static int value returned to indicate value was found
 }db_t;
 
 db_t *db_new();

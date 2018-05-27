@@ -1,8 +1,8 @@
 #ifndef __vebmiddleware_H__
 #define __vebmiddleware_H__
 
-void *initialize_tree();
-void *insert_into_tree(void *tree, int key, int val);
-int *search_tree(void *tree, int key);
+void *init_struct();
+void *insert_into_struct(void *tree, int key, int val);
+int *search_struct(void *tree, int key);
 
 #endif

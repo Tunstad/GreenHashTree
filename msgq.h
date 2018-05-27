@@ -25,6 +25,6 @@ pthread_mutex_t mutex;      //Queue mutex
 
 queue_t* queue_init();
 void queue_add(queue_t *queue, operation_t operation);
-operation_t queue_read(queue_t *queue, int key);
+operation_t queue_read(queue_t *queue);
 
 #endif

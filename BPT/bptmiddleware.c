@@ -1,21 +1,20 @@
 #include "bpt.h"
 #include "bptmiddleware.h"
 
-void *initialize_tree(){
+void *init_struct(){
+    //Insert 
     node *root = insert(NULL, 0, 0);
-
-    //node* root = malloc(sizeof(node*));
 
     return root;
 }
 
-void *insert_into_tree(void *root, int key, int value){
-    void* root2 = insert(root, key, value);
+void *insert_into_struct(void *root, int key, int value){
+    void* newroot = insert(root, key, value);
 
-    return root2;
+    return newoot;
 }
 
-int* search_tree(void *root, int key){
+int* search_struct(void *root, int key){
     record *node_record = find(root, key, 0);
 
     if(node_record == NULL)

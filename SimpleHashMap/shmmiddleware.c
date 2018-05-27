@@ -1,19 +1,19 @@
 #include "shm.h"
 #include "shmmiddleware.h"
 
-void *initialize_tree(){
+void *init_struct(){
     map_t *map = shm_new(10000000);
 
     return map;
 }
 
-void *insert_into_tree(void *root, int key, int value){
+void *insert_into_struct(void *root, int key, int value){
     shm_put(root, key, value);
 
     return root;
 }
 
-int* search_tree(void *root, int key){
+int* search_struct(void *root, int key){
     int* value = shm_get(root, key);
     return value;
 }
