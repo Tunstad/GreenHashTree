@@ -1,6 +1,6 @@
 # GreenPartitionStore #
 
-##How to run benchmark##
+## How to run benchmark ##
 To run the partitoned key value store with the provided benchmark you first need to make one of the provided makefile-targets. The targets that exist are:
 make bench_baseline_shm  - Baseline measurement for a single instance of the Hash Map
 make bench_baseline_bpt  - Baseline measurement for a single instance of the B+ Tree

@@ -24,7 +24,7 @@
 #include <inttypes.h>
 #include <signal.h>
 
-#include "../ght.h"
+#include "../gps.h"
 
 #include "bench_common.h"
 
