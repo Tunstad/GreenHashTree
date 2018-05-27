@@ -11,7 +11,7 @@ void *init_struct(){
 void *insert_into_struct(void *root, int key, int value){
     void* newroot = insert(root, key, value);
 
-    return newoot;
+    return newroot;
 }
 
 int* search_struct(void *root, int key){

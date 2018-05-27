@@ -1,5 +1,6 @@
 #include "staticvebtree.h"
 #include "stddef.h"
+#include "stdlib.h"
 
 void *init_struct(){
     //Initialze VEB-tree with size so large that rebalancing does not affect measurements
@@ -20,7 +21,9 @@ void *insert_into_struct(void *tree, int key, int val){
 
 int* search_struct(void *tree, int key){
 
-    int* retval = search_test(key);
+    int* retval = malloc(sizeof(int));
+
+    *retval = search_test(key);
 
     //Return value is zero, then value was not found
     if(*retval == 0){
