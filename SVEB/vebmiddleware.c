@@ -23,6 +23,7 @@ int* search_struct(void *tree, int key){
 
     int* retval = malloc(sizeof(int));
 
+    //Search for key in VEB-Tree
     *retval = search_test(key);
 
     //Return value is zero, then value was not found
