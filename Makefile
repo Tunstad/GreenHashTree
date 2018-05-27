@@ -4,15 +4,15 @@ INC =
 LIB = -pthread -lm
 BENCHLIB = -lpthread -lpoet -lhb-acc-pow-shared -lhb-energy-msr -lm #-pg
 
-ghtbpt = ght.o msgq.o bpt.o bptmiddleware.o
-ghtsveb = ght.o msgq.o SVEB/SVEB.so
-ghtshm = ght.o msgq.o shm.o shmmiddleware.o
+gpsbpt = gps.o msgq.o bpt.o bptmiddleware.o
+gpssveb = gps.o msgq.o SVEB/SVEB.so
+gpsshm = gps.o msgq.o shm.o shmmiddleware.o
 
 blbpt = baseline.o msgq.o bpt.o bptmiddleware.o
 blsveb = baseline.o msgq.o SVEB/SVEB.so
 blshm = baseline.o msgq.o shm.o shmmiddleware.o
 
-all: bench_ght_shm
+all: bench_gps_shm
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ $(INC) $(LIB)
@@ -32,14 +32,14 @@ shmmiddleware.o: SimpleHashMap/shmmiddleware.c shm.o
 SVEB/SVEB.so:
 	make -C SVEB/
 
-bench_ght_bpt: bench_client.o $(ghtbpt)
-	gcc -g -O3 -o bench_client bench_client.o $(ghtbpt) $(BENCHLIB)
+bench_gps_bpt: bench_client.o $(gpsbpt)
+	gcc -g -O3 -o bench_client bench_client.o $(gpsbpt) $(BENCHLIB)
 
-bench_ght_sveb: bench_client.o $(ghtsveb)
-	gcc -g -O3 -o bench_client bench_client.o $(ghtsveb) $(BENCHLIB)
+bench_gps_sveb: bench_client.o $(gpssveb)
+	gcc -g -O3 -o bench_client bench_client.o $(gpssveb) $(BENCHLIB)
 
-bench_ght_shm: bench_client.o $(ghtshm)
-	gcc -g -O3 -o bench_client bench_client.o $(ghtshm) $(BENCHLIB)
+bench_gps_shm: bench_client.o $(gpsshm)
+	gcc -g -O3 -o bench_client bench_client.o $(gpsshm) $(BENCHLIB)
 
 bench_baseline_bpt: bench_client.o $(blbpt)
 	gcc -g -O3 -o bench_client bench_client.o $(blbpt) $(BENCHLIB)
@@ -55,6 +55,6 @@ bench_client.o: benchmark/bench_client.c
 
 clean:
 	@rm -fv *~ *.o core*
-	@rm -fv $(ghtbpt) $(ghtsveb) $(ghtshm) $(blbpt) $(blsveb) $(blshm)
+	@rm -fv $(gpsbpt) $(gpssveb) $(gpsshm) $(blbpt) $(blsveb) $(blshm)
 	@rm -fv bench_client gmon.out
 

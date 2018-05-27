@@ -24,7 +24,7 @@ pthread_t hb_thread_handler;
 #include <poet/poet.h>
 #include <poet/poet_config.h>
 
-#define PREFIX "GHT"
+#define PREFIX "gps"
 
 heartbeat_t* heart;
 poet_state* state;

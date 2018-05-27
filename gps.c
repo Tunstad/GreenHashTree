@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <time.h>
 #include "msgq.h"
-#include "ght.h"
+#include "gps.h"
 #include "BPT/bpt.h"
 #include "BPT/bptmiddleware.h"
 #include "SVEB/vebmiddleware.h"
@@ -33,7 +33,7 @@ pthread_t hb_thread_handler;
 #include <poet/poet.h>
 #include <poet/poet_config.h>
 
-#define PREFIX "GHT"
+#define PREFIX "gps"
 
 heartbeat_t* heart;
 poet_state* state;
