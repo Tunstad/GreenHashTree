@@ -10,7 +10,7 @@
 // Power and performance control
 //#define USE_POET 
 // Used without poet to measure energy usage
-#define USE_HB  
+//#define USE_HB  
  
 /* START POET & HEARTBEAT */
 // HB Interval (in useconds)

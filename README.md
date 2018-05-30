@@ -51,3 +51,22 @@ The VEB-tree is based on previous code, and is designed from G. S. Brodal, R. Fa
 ## Overall Program Flow ##
 The overall flow of the partitioned program is operations are read by the bench_client.c then db_put and db_get in gps.c is called to send operations into a message queue defined by msgq.c. The operations are retrieved from the queue by the SubStructFunc which in turn calls insert_into_struct or search_struct in %structname%middleware.c files. The middleware in turn calls on the actual insert/search operation of its designated struct. Then this whole path is reversed untill an result is retrieved in bench_client.
 
+## To run the pre-packaged CDE ##
+From the cde-package directory do:
+cd 'cde-root/home/ptu001/GreenPartitionStore'
+then to run the respective strucutres run one of the following commands:
+For baseline Hash Map:
+'./baseline_shm.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+For Baseline B+ Tree:
+'./baseline_bpt.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+For Baseline VEB-Tree:
+'./baseline_sveb.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+For Partitioned Hash Map:
+'./gps_shm.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+For Partitioned B+ Tree:
+'./gps_bpt.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+For Partitioned VEB-Tree:
+'./gps_sveb.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+
+
+

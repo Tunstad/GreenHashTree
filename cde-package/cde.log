@@ -1,0 +1,8 @@
+cd 'cde-root/home/ptu001/GreenPartitionStore'
+'./bench_client.cde' '-t' '12' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+'./baseline_shm.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+'./baseline_bpt.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+'./baseline_sveb.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+'./gps_sveb.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+'./gps_bpt.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
+'./gps_shm.cde' '-l' '/data/datasets/traces/kv1M_op1M_zipf.dat.a.run.trace'
